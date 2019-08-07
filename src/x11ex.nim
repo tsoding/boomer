@@ -3,41 +3,34 @@ import x11/xlib, x11/xutil, x11/x, x11/keysym
 const
   WINDOW_WIDTH = 800
   WINDOW_HEIGHT = 600
+  DISPLAY_STRING = "Hello, Nimrods. Pepepains"
 
 var
-  # TODO: why do we need this shit here? REeeee
-  width, height: cuint
   display: PDisplay
   screen: cint
-  depth: int
   win: TWindow
-  sizeHints: TXSizeHints
   wmDeleteMessage: TAtom
   running: bool
-  xev: TXEvent
-  display_string = "Hello, Nimrods. Pepepains"
 
 proc create_window =
-  width = WINDOW_WIDTH
-  height = WINDOW_HEIGHT
-
   display = XOpenDisplay(nil)
   if display == nil:
     quit "Failed to open display"
 
   screen = XDefaultScreen(display)
-  depth = XDefaultDepth(display, screen)
   var rootwin = XRootWindow(display, screen)
   win = XCreateSimpleWindow(display, rootwin,
                             100, 10,
-                            width, height, 5,
+                            WINDOW_WIDTH, WINDOW_HEIGHT, 5,
                             XBlackPixel(display, screen),
                             XWhitePixel(display, screen))
-  size_hints.flags = PSize or PMinSize or PMaxSize
-  size_hints.min_width = width.cint
-  size_hints.max_width = width.cint
-  size_hints.min_height = height.cint
-  size_hints.max_height = height.cint
+
+  var size_hints = TXSizeHints(
+    flags: PSize or PMinSize or PMaxSize,
+    min_width: WINDOW_WIDTH.cint,
+    max_width: WINDOW_WIDTH.cint,
+    min_height: WINDOW_HEIGHT.cint,
+    max_height: WINDOW_HEIGHT.cint)
 
   discard XSetStandardProperties(display,
                                  win,
@@ -68,10 +61,11 @@ proc draw_screen =
   discard XDrawString(display, win,
                       DefaultGC(display, screen),
                       10, 50,
-                      displayString.cstring,
-                      displayString.len.cint)
+                      DISPLAY_STRING.cstring,
+                      DISPLAY_STRING.len.cint)
 
 proc handle_event =
+  var xev: TXEvent
   discard XNextEvent(display, xev.addr)
   case xev.theType
   of Expose:
