@@ -1,78 +1,81 @@
 import x11/xlib, x11/xutil, x11/x, x11/keysym
 
-const
-  WINDOW_WIDTH = 800
-  WINDOW_HEIGHT = 600
-  DISPLAY_STRING = "Hello, Nimrods. Pepepains"
+type
+  Hello* = object
+    running*: bool
+    display: PDisplay
+    screen: cint
+    win: TWindow
+    wmDeleteMessage: TAtom
+    message: cstring
 
-var
-  display: PDisplay
-  screen: cint
-  win: TWindow
-  wmDeleteMessage: TAtom
-  running: bool
-
-proc create_window =
-  display = XOpenDisplay(nil)
-  if display == nil:
+proc create_hello*(width, height: int,
+                   message: string): Hello =
+  result.message = message
+  result.display = XOpenDisplay(nil)
+  if result.display == nil:
     quit "Failed to open display"
 
-  screen = XDefaultScreen(display)
-  var rootwin = XRootWindow(display, screen)
-  win = XCreateSimpleWindow(display, rootwin,
-                            100, 10,
-                            WINDOW_WIDTH, WINDOW_HEIGHT, 5,
-                            XBlackPixel(display, screen),
-                            XWhitePixel(display, screen))
+  result.screen = XDefaultScreen(result.display)
+  var rootwin = XRootWindow(result.display, result.screen)
+  result.win =
+    XCreateSimpleWindow(result.display, rootwin,
+                        100, 10,
+                        width.cuint, height.cuint, 5,
+                        XBlackPixel(result.display,
+                                    result.screen),
+                        XWhitePixel(result.display,
+                                    result.screen))
 
   var size_hints = TXSizeHints(
     flags: PSize or PMinSize or PMaxSize,
-    min_width: WINDOW_WIDTH.cint,
-    max_width: WINDOW_WIDTH.cint,
-    min_height: WINDOW_HEIGHT.cint,
-    max_height: WINDOW_HEIGHT.cint)
+    min_width: width.cint,
+    max_width: width.cint,
+    min_height: height.cint,
+    max_height: height.cint)
 
-  discard XSetStandardProperties(display,
-                                 win,
+  discard XSetStandardProperties(result.display,
+                                 result.win,
                                  "Simple Window",
                                  "window",
                                  0, nil, 0,
                                  addr(size_hints))
-  discard XSelectInput(display, win,
+  discard XSelectInput(result.display, result.win,
                        ButtonPressMask or KeyPressMask or
                        PointerMotionMask or ExposureMask)
-  discard XMapWindow(display, win)
+  discard XMapWindow(result.display, result.win)
 
-  wmDeleteMessage =
-    XInternAtom(display,
+  result.wmDeleteMessage =
+    XInternAtom(result.display,
                 "WM_DELETE_WINDOW",
                 false.TBool)
 
-  discard XSetWMProtocols(display,
-                          win,
-                          wmDeleteMessage.addr, 1)
-  running = true
+  discard XSetWMProtocols(result.display,
+                          result.win,
+                          result.wmDeleteMessage.addr, 1)
+  result.running = true
 
-proc close_window =
-  discard XDestroyWindow(display, win)
-  discard XCloseDisplay(display)
+proc close* (hello: Hello) =
+  discard XDestroyWindow(hello.display, hello.win)
+  discard XCloseDisplay(hello.display)
 
-proc draw_screen =
-  discard XDrawString(display, win,
-                      DefaultGC(display, screen),
+proc draw* (hello: Hello) =
+  discard XDrawString(hello.display,
+                      hello.win,
+                      DefaultGC(hello.display, hello.screen),
                       10, 50,
-                      DISPLAY_STRING.cstring,
-                      DISPLAY_STRING.len.cint)
+                      hello.message,
+                      hello.message.len.cint)
 
-proc handle_event =
+proc handle_event* (hello: var Hello) =
   var xev: TXEvent
-  discard XNextEvent(display, xev.addr)
+  discard XNextEvent(hello.display, xev.addr)
   case xev.theType
   of Expose:
-    draw_screen()
+    hello.draw()
   of ClientMessage:
-    if cast[TAtom](xev.xclient.data.l[0]) == wmDeleteMessage:
-      running = false
+    if cast[TAtom](xev.xclient.data.l[0]) == hello.wmDeleteMessage:
+      hello.running = false
   of KeyPress:
     var key = XLookupKeysym(cast[PXKeyEvent](xev.addr), 0)
     if key != 0:
@@ -82,7 +85,7 @@ proc handle_event =
   else:
     discard
 
-create_window()
-while running:
-  handle_event()
-close_window()
+var hello = createHello(800, 600, "Hello!")
+defer: hello.close()
+while hello.running:
+  hello.handle_event()
