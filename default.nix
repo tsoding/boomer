@@ -5,6 +5,8 @@ with import <nixpkgs> {}; {
                         gcc
                         pkgconfig
                         nim
+                        xorg.libX11
                       ];
+        LD_LIBRARY_PATH="${xorg.libX11}/lib/";
     };
 }
