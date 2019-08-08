@@ -1,3 +1,5 @@
+[![Tsoding](https://img.shields.io/badge/twitch.tv-tsoding-purple?logo=twitch&style=for-the-badge)](https://www.twitch.tv/tsoding)
+
 # Boomer
 
 Zoomer application for boomers
