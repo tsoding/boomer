@@ -85,7 +85,8 @@ proc handle_event* (hello: var Hello) =
   else:
     discard
 
-var hello = createHello(800, 600, "Hello!")
-defer: hello.close()
-while hello.running:
-  hello.handle_event()
+block:
+  var hello = createHello(800, 600, "Hello!")
+  defer: hello.close()
+  while hello.running:
+    hello.handle_event()
