@@ -6,7 +6,8 @@ with import <nixpkgs> {}; {
                         pkgconfig
                         nim
                         xorg.libX11
+                        libGL
                       ];
-        LD_LIBRARY_PATH="${xorg.libX11}/lib/";
+        LD_LIBRARY_PATH="${xorg.libX11}/lib/;${libGL}/lib/";
     };
 }
