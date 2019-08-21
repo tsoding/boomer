@@ -8,6 +8,6 @@ with import <nixpkgs> {}; {
                         xorg.libX11
                         libGL
                       ];
-        LD_LIBRARY_PATH="${xorg.libX11}/lib/;${libGL}/lib/";
+        LD_LIBRARY_PATH="/run/opengl-driver/lib;${xorg.libX11}/lib/;${libGL}/lib/";
     };
 }
