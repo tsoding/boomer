@@ -1,5 +1,28 @@
 import x11/xlib, x11/x
-import opengl, opengl/glx
+import opengl, opengl/glx, opengl/glu
+
+proc DrawAQuad() = 
+  glClearColor(1.0, 1.0, 1.0, 1.0)
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+ 
+  glMatrixMode(GL_PROJECTION)
+  glLoadIdentity()
+  glOrtho(-1.0, 1.0, -1.0, 1.0, 1.0, 20.0)
+ 
+  glMatrixMode(GL_MODELVIEW)
+  glLoadIdentity()
+  gluLookAt(0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+ 
+  glBegin(GL_QUADS)
+  glColor3f(1.0, 0.0, 0.0)
+  glVertex3f(-0.75, -0.75, 0.0)
+  glColor3f(0.0, 1.0, 0.0)
+  glVertex3f( 0.75, -0.75, 0.0)
+  glColor3f(0.0, 0.0, 1.0)
+  glVertex3f( 0.75,  0.75, 0.0)
+  glColor3f(1.0, 1.0, 0.0)
+  glVertex3f(-0.75,  0.75, 0.0)
+  glEnd()
 
 proc main() =
   var display = XOpenDisplay(nil)
@@ -53,16 +76,29 @@ proc main() =
 
   var xev: TXEvent
 
+  glClearColor(0.0, 1.0, 0.0, 1.0)
+
   while true:
+    var gwa: TXWindowAttributes
+    discard XGetWindowAttributes(display, win, addr gwa)
+    glViewport(0, 0, gwa.width, gwa.height)
+
+    glClear(GL_COLOR_BUFFER_BIT)
+
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glOrtho(-1.0, 1.0, -1.0, 1.0, 1.0, 20.0)
+
+    DrawAQuad()
+
+    glXSwapBuffers(display, win)
+
     discard XNextEvent(display, addr xev)
 
     case xev.theType
     of Expose:
-      var gwa: TXWindowAttributes
-      discard XGetWindowAttributes(display, win, addr gwa)
-      glViewport(0, 0, gwa.width, gwa.height)
-      # Draw Something
-      glXSwapBuffers(display, win)
+      echo "hello"
+
     of KeyPress:
       discard glXMakeCurrent(display, None, nil)
       glXDestroyContext(display, glc)

@@ -7,7 +7,8 @@ with import <nixpkgs> {}; {
                         nim
                         xorg.libX11
                         libGL
+                        libGLU
                       ];
-        LD_LIBRARY_PATH="/run/opengl-driver/lib;${xorg.libX11}/lib/;${libGL}/lib/";
+        LD_LIBRARY_PATH="/run/opengl-driver/lib;${xorg.libX11}/lib/;${libGL}/lib/;${libGLU}/lib";
     };
 }
