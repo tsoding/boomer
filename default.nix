@@ -6,7 +6,9 @@ with import <nixpkgs> {}; {
                         pkgconfig
                         nim
                         xorg.libX11
+                        libGL
+                        libGLU
                       ];
-        LD_LIBRARY_PATH="${xorg.libX11}/lib/";
+        LD_LIBRARY_PATH="/run/opengl-driver/lib;${xorg.libX11}/lib/;${libGL}/lib/;${libGLU}/lib";
     };
 }

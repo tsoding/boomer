@@ -3,6 +3,6 @@ author      = "me"
 description = "Zoomer application for boomers"
 license     = "MIT"
 srcDir      = "src"
-bin         = @["boomer", "x11ex"]
+bin         = @["boomer", "x11ex", "glxex"]
 
-requires "nim >= 0.18.0", "x11 >= 1.1"
+requires "nim >= 0.18.0", "x11 >= 1.1", "opengl >= 1.2.3"
