@@ -26,20 +26,20 @@ int doubleBufferAttributess[] = {
     None
 };
 
-void debugMessage(GLenum source,
-                  GLenum type,
-                  GLuint id,
-                  GLenum severity,
-                  GLsizei length,
-                  const GLchar *message,
-                  const void *userParam)
+void debug_message(GLenum source,
+                   GLenum type,
+                   GLuint id,
+                   GLenum severity,
+                   GLsizei length,
+                   const GLchar *message,
+                   const void *userParam)
 {
     fprintf(stderr, "%.*s\n", length, message);
 }
 
-static Bool WaitForNotify(Display *dpy,
-                          XEvent *event,
-                          XPointer arg)
+static Bool wait_for_notify(Display *dpy,
+                            XEvent *event,
+                            XPointer arg)
 {
     return (event->type == MapNotify) && (event->xmap.window = (Window) arg);
 }
@@ -82,17 +82,16 @@ int main(int argc, char *argv[])
 
     XMapWindow(dpy, xWin);
     XEvent event;
-    XIfEvent(dpy, &event, WaitForNotify, (XPointer) xWin);
+    XIfEvent(dpy, &event, wait_for_notify, (XPointer) xWin);
 
     glXMakeContextCurrent(dpy, glxWin, glxWin, context);
 
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(debugMessage, NULL);
+    glDebugMessageCallback(debug_message, NULL);
 
     GLuint textures = 0;
     glGenTextures(1, &textures);
     glBindTexture(GL_TEXTURE_2D, textures);
-    glXBindTexImageEXT(dpy, RootWindow(dpy, vInfo->screen), GLX_FRONT_LEFT_EXT, NULL)
 
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
