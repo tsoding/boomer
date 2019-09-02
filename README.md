@@ -19,6 +19,8 @@ $ ./boomer
 - https://github.com/nim-lang/x11/blob/bf9dc74dd196a98b7c2a2beea4d92640734f7c60/examples/x11ex.nim
 - http://archive.xfce.org/src/xfce/xfwm4/4.13/
 - https://www.khronos.org/opengl/wiki/Programming_OpenGL_in_Linux:_GLX_and_Xlib
+- https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glXIntro.xml
+- https://stackoverflow.com/questions/24988164/c-fast-screenshots-in-linux-for-use-with-opencv
 
 ## Support
 
