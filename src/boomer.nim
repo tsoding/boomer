@@ -1,27 +1,38 @@
 import x11/xlib, x11/x, x11/xutil
-import opengl, opengl/glx, opengl/glu
+import opengl, opengl/glx, opengl/glu, opengl/glut
 
-proc saveToPPM(filePath: string; pixels: cstring; width, height: cint) =
+type Image* = object
+  width, height, bpp: cint
+  pixels: cstring
+
+proc saveToPPM(filePath: string; image: Image) =
   var f = open(filePath, fmWrite)
   defer: f.close
   writeLine(f, "P6")
-  writeLine(f, width, " ", height)
+  writeLine(f, image.width, " ", image.height)
   writeLine(f, 255)
-  for i in 0..<(width * height):
-    f.write(pixels[i * 4 + 2])
-    f.write(pixels[i * 4 + 1])
-    f.write(pixels[i * 4 + 0])a
+  for i in 0..<(image.width * image.height):
+    f.write(image.pixels[i * 4 + 2])
+    f.write(image.pixels[i * 4 + 1])
+    f.write(image.pixels[i * 4 + 0])
 
-proc main() =
+proc display() {.cdecl.} =
+  glClearColor(1.0, 0.0, 0.0, 1.0)
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+
+  glutSwapBuffers()
+
+proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
+  if height == 0:
+    return
+  glViewport(0, 0, width, height)
+
+# NOTE: it's not possible to deallocate the returned Image because the
+# reference to XImage is lost.
+proc takeScreenshot(): Image =
   var display = XOpenDisplay(nil)
   if display == nil:
     quit "Failed to open display"
-  defer: discard XCloseDisplay(display)
-
-  discard XSetErrorHandler(
-    proc (display: PDisplay, error: PXErrorEvent): cint{.cdecl.} =
-      echo "X error happend";
-      return 0)
 
   var root = DefaultRootWindow(display)
   var attributes: TXWindowAttributes
@@ -33,16 +44,39 @@ proc main() =
                              attributes.height.cuint,
                              AllPlanes,
                              ZPixmap)
-  discard XSync(display, 0)
-
   if screenshot == nil:
     quit "Could not get a screenshot"
-  defer: discard XDestroyImage(screenshot)
 
-  echo("Width: ", attributes.width)
-  echo("Height: ", attributes.height)
-  echo("BPP: ", screenshot.bits_per_pixel)
+  discard XCloseDisplay(display)
 
-  saveToPPM("screenshot.ppm", screenshot.data, attributes.width, attributes.height)
+  result.width = attributes.width
+  result.height = attributes.height
+  result.bpp = screenshot.bits_per_pixel
+  result.pixels = screenshot.data
+
+proc main() =
+  let image = takeScreenshot()
+
+  assert image.bpp == 32
+
+  var argc: cint = 0;
+  glutInit(addr argc, nil)
+  # TODO: how do you deinit glut?
+  glutInitDisplayMode(GLUT_DOUBLE)
+  # TODO: the window should be the size of the screen
+  glutInitWindowSize(640, 480)
+  glutInitWindowPosition(0, 0)
+  discard glutCreateWindow("Wordpress Application")
+
+  glutDisplayFunc(display)
+  glutReshapeFunc(reshape)
+
+  loadExtensions()
+
+  # TODO: the screenshot image is not rendered
+
+  glutMainLoop()
+
+  # saveToPPM("screenshot.ppm", screenshot.data, attributes.width, attributes.height)
 
 main()
