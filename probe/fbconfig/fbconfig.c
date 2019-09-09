@@ -7,6 +7,12 @@
 
 #include <unistd.h>
 
+#define TARGET_WIDTH 256
+#define TARGET_HEIGHT 256
+
+#define SOURCE_WIDTH 100
+#define SOURCE_HEIGHT 100
+
 #define CHECK_ERROR(context)                                         \
     do {                                                             \
         int error = glGetError();                                    \
@@ -79,7 +85,7 @@ int main(int argc, char *argv[])
     GLXWindow xWin = XCreateWindow(
         dpy,
         RootWindow(dpy, vInfo->screen),
-        0, 0, 256, 256, 0,
+        0, 0, TARGET_WIDTH, TARGET_HEIGHT, 0,
         vInfo->depth,
         InputOutput,
         vInfo->visual,
@@ -96,7 +102,7 @@ int main(int argc, char *argv[])
 
     glXMakeContextCurrent(dpy, glxWin, glxWin, context);
 
-    glViewport(0, 0, 256, 256);
+    glViewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(debug_message, NULL);
@@ -113,9 +119,9 @@ int main(int argc, char *argv[])
     /* Prep a test texture image, grabbing a small chunk of the root
      * window */
     {
-        XImage *img = XGetImage(dpy, DefaultRootWindow(dpy), 0, 0, 100, 100, AllPlanes, ZPixmap);
+        XImage *img = XGetImage(dpy, DefaultRootWindow(dpy), 0, 0, SOURCE_WIDTH, SOURCE_HEIGHT, AllPlanes, ZPixmap);
         assert(img->bits_per_pixel == 32);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, 0, GL_BGRA, GL_UNSIGNED_BYTE, img->data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SOURCE_WIDTH, SOURCE_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, img->data);
         CHECK_ERROR("loading texture");
         XDestroyImage(img);
     }
@@ -123,7 +129,7 @@ int main(int argc, char *argv[])
     glEnable(GL_TEXTURE_2D);
 
     /* Set up the display coordinate space as orthographic */
-    glOrtho(0.0d, 256.0d, 256.0d, 0.0d, -1.0d, 1.0d);
+    glOrtho(0.0d, TARGET_WIDTH, TARGET_HEIGHT, 0.0d, -1.0d, 1.0d);
     CHECK_ERROR("setting transforms");
 
     /* If we don't set the mapping filters, we get a blank image */
@@ -139,11 +145,11 @@ int main(int argc, char *argv[])
     glTexCoord2i(0, 0);
     glVertex2i(0, 0);
     glTexCoord2i(1, 0);
-    glVertex2i(256, 0);
+    glVertex2i(TARGET_WIDTH, 0);
     glTexCoord2i(1, 1);
-    glVertex2i(256, 256);
+    glVertex2i(TARGET_WIDTH, TARGET_HEIGHT);
     glTexCoord2i(0, 1);
-    glVertex2i(0, 256);
+    glVertex2i(0, TARGET_HEIGHT);
     glEnd();
     CHECK_ERROR("rasterizing the quadrangle");
 
