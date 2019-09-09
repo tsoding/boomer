@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -113,7 +114,8 @@ int main(int argc, char *argv[])
      * window */
     {
         XImage *img = XGetImage(dpy, DefaultRootWindow(dpy), 0, 0, 100, 100, AllPlanes, ZPixmap);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->data);
+        assert(img->bits_per_pixel == 32);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, 0, GL_BGRA, GL_UNSIGNED_BYTE, img->data);
         CHECK_ERROR("loading texture");
         XDestroyImage(img);
     }
