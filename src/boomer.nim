@@ -63,7 +63,7 @@ proc main() =
   glutInit(addr argc, nil)
   # TODO(#7): how do you deinit glut?
   glutInitDisplayMode(GLUT_DOUBLE)
-  # TODO: the window should be the size of the screen
+  # TODO(#8): the window should be the size of the screen
   glutInitWindowSize(640, 480)
   glutInitWindowPosition(0, 0)
   discard glutCreateWindow("Wordpress Application")
