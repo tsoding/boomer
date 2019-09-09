@@ -61,7 +61,7 @@ proc main() =
 
   var argc: cint = 0;
   glutInit(addr argc, nil)
-  # TODO: how do you deinit glut?
+  # TODO(#7): how do you deinit glut?
   glutInitDisplayMode(GLUT_DOUBLE)
   # TODO: the window should be the size of the screen
   glutInitWindowSize(640, 480)
