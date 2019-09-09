@@ -73,7 +73,7 @@ proc main() =
 
   loadExtensions()
 
-  # TODO: the screenshot image is not rendered
+  # TODO(#9): the screenshot image is not rendered
 
   glutMainLoop()
 
