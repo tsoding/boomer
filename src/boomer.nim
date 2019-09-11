@@ -31,17 +31,19 @@ proc display() {.cdecl.} =
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
   glScalef(1.01, 1.01, 1.0)
-  glRotatef(0.5, 0.0, 0.0, 1.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
-  glVertex2i(0, 0)
+  glVertex2f(image.width.float * -0.5, image.height.float * -0.5)
+
   glTexCoord2i(1, 0)
-  glVertex2i(image.width, 0)
+  glVertex2f(image.width.float * 0.5,  image.height.float * -0.5)
+
   glTexCoord2i(1, 1)
-  glVertex2i(image.width, image.height)
+  glVertex2f(image.width.float * 0.5,  image.height.float * 0.5)
+
   glTexCoord2i(0, 1)
-  glVertex2i(0, image.height)
+  glVertex2f(image.width.float * -0.5, image.height.float * 0.5)
   glEnd()
   checkError("rasterizing the quadrangle")
   # TODO(#12): there is no way to transform the image for the user
@@ -129,12 +131,11 @@ proc main() =
 
   glEnable(GL_TEXTURE_2D)
 
-  glOrtho(0.0,
-          image.width.float,
-          image.height.float,
-          0.0,
-          -1.0,
-          1.0)
+  glOrtho(image.width.float * -0.5,
+          image.width.float * 0.5,
+          image.height.float * -0.5,
+          image.height.float * 0.5,
+          -1.0, 1.0)
   checkError("setting transforms")
 
   glTexParameteri(GL_TEXTURE_2D,
