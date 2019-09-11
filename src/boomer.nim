@@ -116,7 +116,7 @@ proc takeScreenshot(): Image =
   result.bpp = screenshot.bits_per_pixel
   result.pixels = screenshot.data
 
-# TODO: replace GLUT with something where you are not required to do weird thing with timers
+# TODO(#17): replace GLUT with something where you are not required to do weird thing with timers
 proc timer(x: cint) {.cdecl.} =
   glutPostRedisplay()
   glutTimerFunc(16, timer, 1)
