@@ -12,7 +12,7 @@ type Image* = object
   width, height, bpp: cint
   pixels: cstring
 
-# TODO: is there any way to make image not a global variable in GLUT?
+# TODO(#11): is there any way to make image not a global variable in GLUT?
 var image: Image
 
 proc saveToPPM(filePath: string, image: Image) =
