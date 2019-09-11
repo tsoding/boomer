@@ -112,7 +112,7 @@ proc main() =
                image.width,
                image.height,
                0,
-               # TODO: the texture format is hardcoded
+               # TODO(#13): the texture format is hardcoded
                GL_BGRA,
                GL_UNSIGNED_BYTE,
                image.pixels)
