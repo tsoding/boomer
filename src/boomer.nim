@@ -79,7 +79,7 @@ proc motion(x, y: cint) {.cdecl.} =
   translateX = x.float - anchorX
   translateY = y.float - anchorY
 
-# TODO: scaling should be done by scrolling mouse wheel
+# TODO(#16): scaling should be done by scrolling mouse wheel
 proc keyboard(c: int8, v1, v2: cint){.cdecl.} =
   case c
   of 'w'.ord:
