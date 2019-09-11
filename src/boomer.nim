@@ -16,6 +16,8 @@ type Image* = object
 var image: Image
 var translateX: float = 0.0
 var translateY: float = 0.0
+var anchorX: float = 0.0
+var anchorY: float = 0.0
 var scale: float = 1.0
 
 proc saveToPPM(filePath: string, image: Image) =
@@ -64,9 +66,18 @@ proc display() {.cdecl.} =
 proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
   discard
 
+proc mouse(button, state, x, y: cint) {.cdecl.} =
+  case state
+  of GLUT_DOWN:
+    anchorX = x.float - translateX
+    anchorY = y.float - translateY
+  else:
+    discard
+
 proc motion(x, y: cint) {.cdecl.} =
-  translateX = x.float
-  translateY = y.float
+  # TODO: dragging does not take scale into account
+  translateX = x.float - anchorX
+  translateY = y.float - anchorY
 
 # TODO: scaling should be done by scrolling mouse wheel
 proc keyboard(c: int8, v1, v2: cint){.cdecl.} =
@@ -127,8 +138,9 @@ proc main() =
   glutDisplayFunc(display)
   glutReshapeFunc(reshape)
   glutTimerFunc(16, timer, 1)
-  glutPassiveMotionFunc(motion)
+  glutMotionFunc(motion)
   glutKeyboardFunc(keyboard)
+  glutMouseFunc(mouse)
 
   loadExtensions()
 
