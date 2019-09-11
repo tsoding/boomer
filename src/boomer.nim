@@ -1,11 +1,21 @@
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx, opengl/glu, opengl/glut
+import macros
+
+macro checkError(context: string): untyped =
+  result = quote do:
+    let error = glGetError()
+    if error != 0.GLenum:
+      echo "GL error ", error.GLint, " ", `context`
 
 type Image* = object
   width, height, bpp: cint
   pixels: cstring
 
-proc saveToPPM(filePath: string; image: Image) =
+# TODO(#11): is there any way to make image not a global variable in GLUT?
+var image: Image
+
+proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
   defer: f.close
   writeLine(f, "P6")
@@ -19,6 +29,22 @@ proc saveToPPM(filePath: string; image: Image) =
 proc display() {.cdecl.} =
   glClearColor(1.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+
+  glBegin(GL_QUADS)
+  glTexCoord2i(0, 0)
+  glVertex2i(0, 0)
+  glTexCoord2i(1, 0)
+  glVertex2i(image.width, 0)
+  glTexCoord2i(1, 1)
+  glVertex2i(image.width, image.height)
+  glTexCoord2i(0, 1)
+  glVertex2i(0, image.height)
+  glEnd()
+  checkError("rasterizing the quadrangle")
+  # TODO(#12): there is no way to transform the image for the user
+
+  glFlush()
+  checkError("flush")
 
   glutSwapBuffers()
 
@@ -55,16 +81,16 @@ proc takeScreenshot(): Image =
   result.pixels = screenshot.data
 
 proc main() =
-  let image = takeScreenshot()
+  image = takeScreenshot()
 
   assert image.bpp == 32
 
-  var argc: cint = 0;
+  var argc: cint = 0
   glutInit(addr argc, nil)
   # TODO(#7): how do you deinit glut?
   glutInitDisplayMode(GLUT_DOUBLE)
   # TODO(#8): the window should be the size of the screen
-  glutInitWindowSize(640, 480)
+  glutInitWindowSize(image.width, image.height)
   glutInitWindowPosition(0, 0)
   discard glutCreateWindow("Wordpress Application")
 
@@ -73,10 +99,44 @@ proc main() =
 
   loadExtensions()
 
-  # TODO(#9): the screenshot image is not rendered
+  var textures: GLuint = 0
+  glGenTextures(1, addr textures)
+  checkError("making texture")
+
+  glBindTexture(GL_TEXTURE_2D, textures)
+  checkError("binding texture")
+
+  glTexImage2D(GL_TEXTURE_2D,
+               0,
+               GL_RGB.GLint,
+               image.width,
+               image.height,
+               0,
+               # TODO(#13): the texture format is hardcoded
+               GL_BGRA,
+               GL_UNSIGNED_BYTE,
+               image.pixels)
+  checkError("loading texture")
+
+  glEnable(GL_TEXTURE_2D)
+
+  glOrtho(0.0,
+          image.width.float,
+          image.height.float,
+          0.0,
+          -1.0,
+          1.0)
+  checkError("setting transforms")
+
+  glTexParameteri(GL_TEXTURE_2D,
+                  GL_TEXTURE_MIN_FILTER,
+                  GL_LINEAR)
+  glTexParameteri(GL_TEXTURE_2D,
+                  GL_TEXTURE_MAG_FILTER,
+                  GL_LINEAR)
 
   glutMainLoop()
 
-  # saveToPPM("screenshot.ppm", screenshot.data, attributes.width, attributes.height)
+  # saveToPPM("screenshot.ppm", image)
 
 main()
