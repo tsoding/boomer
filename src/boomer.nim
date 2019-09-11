@@ -16,6 +16,7 @@ type Image* = object
 var image: Image
 var translateX: float = 0.0
 var translateY: float = 0.0
+var scale: float = 1.0
 
 proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
@@ -29,11 +30,12 @@ proc saveToPPM(filePath: string, image: Image) =
     f.write(image.pixels[i * 4 + 0])
 
 proc display() {.cdecl.} =
-  glClearColor(1.0, 0.0, 0.0, 1.0)
+  glClearColor(0.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
   glPushMatrix()
 
+  glScalef(scale, scale, 1.0)
   glTranslatef(translateX, translateY, 0.0)
 
   glBegin(GL_QUADS)
@@ -65,6 +67,16 @@ proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
 proc motion(x, y: cint) {.cdecl.} =
   translateX = x.float
   translateY = y.float
+
+# TODO: scaling should be done by scrolling mouse wheel
+proc keyboard(c: int8, v1, v2: cint){.cdecl.} =
+  case c
+  of 'w'.ord:
+    scale += 0.1
+  of 's'.ord:
+    scale -= 0.1
+  else:
+    discard
 
 # NOTE: it's not possible to deallocate the returned Image because the
 # reference to XImage is lost.
@@ -116,6 +128,7 @@ proc main() =
   glutReshapeFunc(reshape)
   glutTimerFunc(16, timer, 1)
   glutPassiveMotionFunc(motion)
+  glutKeyboardFunc(keyboard)
 
   loadExtensions()
 
