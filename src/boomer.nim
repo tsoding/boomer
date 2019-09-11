@@ -75,7 +75,7 @@ proc mouse(button, state, x, y: cint) {.cdecl.} =
     discard
 
 proc motion(x, y: cint) {.cdecl.} =
-  # TODO: dragging does not take scale into account
+  # TODO(#15): dragging does not take scale into account
   translateX = x.float - anchorX
   translateY = y.float - anchorY
 
