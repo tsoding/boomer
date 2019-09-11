@@ -14,6 +14,8 @@ type Image* = object
 
 # TODO(#11): is there any way to make image not a global variable in GLUT?
 var image: Image
+var translateX: float = 0.0
+var translateY: float = 0.0
 
 proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
@@ -30,7 +32,9 @@ proc display() {.cdecl.} =
   glClearColor(1.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-  glScalef(1.01, 1.01, 1.0)
+  glPushMatrix()
+
+  glTranslatef(translateX, translateY, 0.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
@@ -51,10 +55,16 @@ proc display() {.cdecl.} =
   glFlush()
   checkError("flush")
 
+  glPopMatrix()
+
   glutSwapBuffers()
 
 proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
   discard
+
+proc motion(x, y: cint) {.cdecl.} =
+  translateX = x.float
+  translateY = y.float
 
 # NOTE: it's not possible to deallocate the returned Image because the
 # reference to XImage is lost.
@@ -105,6 +115,7 @@ proc main() =
   glutDisplayFunc(display)
   glutReshapeFunc(reshape)
   glutTimerFunc(16, timer, 1)
+  glutPassiveMotionFunc(motion)
 
   loadExtensions()
 
