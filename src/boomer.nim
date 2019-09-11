@@ -133,8 +133,8 @@ proc main() =
 
   glOrtho(image.width.float * -0.5,
           image.width.float * 0.5,
-          image.height.float * -0.5,
           image.height.float * 0.5,
+          image.height.float * -0.5,
           -1.0, 1.0)
   checkError("setting transforms")
 
