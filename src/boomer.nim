@@ -54,9 +54,7 @@ proc display() {.cdecl.} =
   glutSwapBuffers()
 
 proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
-  if height == 0:
-    return
-  glViewport(0, 0, width, height)
+  discard
 
 # NOTE: it's not possible to deallocate the returned Image because the
 # reference to XImage is lost.
