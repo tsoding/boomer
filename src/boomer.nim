@@ -77,6 +77,6 @@ proc main() =
 
   glutMainLoop()
 
-  # saveToPPM("screenshot.ppm", screenshot.data, attributes.width, attributes.height)
+  # saveToPPM("screenshot.ppm", image)
 
 main()
