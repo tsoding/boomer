@@ -14,6 +14,11 @@ type Image* = object
 
 # TODO(#11): is there any way to make image not a global variable in GLUT?
 var image: Image
+var translateX: float = 0.0
+var translateY: float = 0.0
+var anchorX: float = 0.0
+var anchorY: float = 0.0
+var scale: float = 1.0
 
 proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
@@ -27,18 +32,26 @@ proc saveToPPM(filePath: string, image: Image) =
     f.write(image.pixels[i * 4 + 0])
 
 proc display() {.cdecl.} =
-  glClearColor(1.0, 0.0, 0.0, 1.0)
+  glClearColor(0.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+
+  glPushMatrix()
+
+  glScalef(scale, scale, 1.0)
+  glTranslatef(translateX, translateY, 0.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
-  glVertex2i(0, 0)
+  glVertex2f(image.width.float * -0.5, image.height.float * -0.5)
+
   glTexCoord2i(1, 0)
-  glVertex2i(image.width, 0)
+  glVertex2f(image.width.float * 0.5,  image.height.float * -0.5)
+
   glTexCoord2i(1, 1)
-  glVertex2i(image.width, image.height)
+  glVertex2f(image.width.float * 0.5,  image.height.float * 0.5)
+
   glTexCoord2i(0, 1)
-  glVertex2i(0, image.height)
+  glVertex2f(image.width.float * -0.5, image.height.float * 0.5)
   glEnd()
   checkError("rasterizing the quadrangle")
   # TODO(#12): there is no way to transform the image for the user
@@ -46,12 +59,35 @@ proc display() {.cdecl.} =
   glFlush()
   checkError("flush")
 
+  glPopMatrix()
+
   glutSwapBuffers()
 
 proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
-  if height == 0:
-    return
-  glViewport(0, 0, width, height)
+  discard
+
+proc mouse(button, state, x, y: cint) {.cdecl.} =
+  case state
+  of GLUT_DOWN:
+    anchorX = x.float - translateX
+    anchorY = y.float - translateY
+  else:
+    discard
+
+proc motion(x, y: cint) {.cdecl.} =
+  # TODO(#15): dragging does not take scale into account
+  translateX = x.float - anchorX
+  translateY = y.float - anchorY
+
+# TODO(#16): scaling should be done by scrolling mouse wheel
+proc keyboard(c: int8, v1, v2: cint){.cdecl.} =
+  case c
+  of 'w'.ord:
+    scale += 0.1
+  of 's'.ord:
+    scale -= 0.1
+  else:
+    discard
 
 # NOTE: it's not possible to deallocate the returned Image because the
 # reference to XImage is lost.
@@ -80,6 +116,11 @@ proc takeScreenshot(): Image =
   result.bpp = screenshot.bits_per_pixel
   result.pixels = screenshot.data
 
+# TODO(#17): replace GLUT with something where you are not required to do weird thing with timers
+proc timer(x: cint) {.cdecl.} =
+  glutPostRedisplay()
+  glutTimerFunc(16, timer, 1)
+
 proc main() =
   image = takeScreenshot()
 
@@ -96,6 +137,10 @@ proc main() =
 
   glutDisplayFunc(display)
   glutReshapeFunc(reshape)
+  glutTimerFunc(16, timer, 1)
+  glutMotionFunc(motion)
+  glutKeyboardFunc(keyboard)
+  glutMouseFunc(mouse)
 
   loadExtensions()
 
@@ -120,20 +165,19 @@ proc main() =
 
   glEnable(GL_TEXTURE_2D)
 
-  glOrtho(0.0,
-          image.width.float,
-          image.height.float,
-          0.0,
-          -1.0,
-          1.0)
+  glOrtho(image.width.float * -0.5,
+          image.width.float * 0.5,
+          image.height.float * 0.5,
+          image.height.float * -0.5,
+          -1.0, 1.0)
   checkError("setting transforms")
 
   glTexParameteri(GL_TEXTURE_2D,
                   GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR)
+                  GL_NEAREST)
   glTexParameteri(GL_TEXTURE_2D,
                   GL_TEXTURE_MAG_FILTER,
-                  GL_LINEAR)
+                  GL_NEAREST)
 
   glutMainLoop()
 
