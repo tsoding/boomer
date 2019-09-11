@@ -30,6 +30,9 @@ proc display() {.cdecl.} =
   glClearColor(1.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
+  glScalef(1.01, 1.01, 1.0)
+  glRotatef(0.5, 0.0, 0.0, 1.0)
+
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
   glVertex2i(0, 0)
@@ -80,6 +83,11 @@ proc takeScreenshot(): Image =
   result.bpp = screenshot.bits_per_pixel
   result.pixels = screenshot.data
 
+# TODO: replace GLUT with something where you are not required to do weird thing with timers
+proc timer(x: cint) {.cdecl.} =
+  glutPostRedisplay()
+  glutTimerFunc(16, timer, 1)
+
 proc main() =
   image = takeScreenshot()
 
@@ -96,6 +104,7 @@ proc main() =
 
   glutDisplayFunc(display)
   glutReshapeFunc(reshape)
+  glutTimerFunc(16, timer, 1)
 
   loadExtensions()
 
