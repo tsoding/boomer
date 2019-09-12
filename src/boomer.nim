@@ -1,24 +1,23 @@
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx, opengl/glu, opengl/glut
-import macros
 
-macro checkError(context: string): untyped =
-  result = quote do:
-    let error = glGetError()
-    if error != 0.GLenum:
-      echo "GL error ", error.GLint, " ", `context`
+template checkError(context: string) =
+  let error = glGetError()
+  if error != 0.GLenum:
+    echo "GL error ", error.GLint, " ", context
 
 type Image* = object
   width, height, bpp: cint
   pixels: cstring
 
 # TODO(#11): is there any way to make image not a global variable in GLUT?
-var image: Image
-var translateX: float = 0.0
-var translateY: float = 0.0
-var anchorX: float = 0.0
-var anchorY: float = 0.0
-var scale: float = 1.0
+var
+  image: Image
+  translateX = 0.0
+  translateY = 0.0
+  anchorX = 0.0
+  anchorY = 0.0
+  scale = 1.0
 
 proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
@@ -79,7 +78,7 @@ proc motion(x, y: cint) {.cdecl.} =
   translateY = y.float - anchorY
 
 # TODO(#16): scaling should be done by scrolling mouse wheel
-proc keyboard(c: int8, v1, v2: cint){.cdecl.} =
+proc keyboard(c: int8, v1, v2: cint) {.cdecl.} =
   case c
   of 'w'.ord:
     scale += 0.1
