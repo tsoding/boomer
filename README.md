@@ -14,6 +14,15 @@ $ nix-shell   # only for NixOS
 $ nimble build
 $ ./boomer
 ```
+
+## NixOS Overlay
+
+```
+$ mkdir -p ~/.config/nixpkgs/overlays
+$ cp -r ./overlay/ ~/.config/nixpkgs/overlays/boomer
+$ nix-env -iA nixos.boomer
+```
+
 ## References
 
 - https://github.com/nim-lang/x11/blob/bf9dc74dd196a98b7c2a2beea4d92640734f7c60/examples/x11ex.nim
