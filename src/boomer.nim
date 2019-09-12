@@ -54,7 +54,6 @@ proc display() {.cdecl.} =
   glVertex2f(image.width.float * -0.5, image.height.float * 0.5)
   glEnd()
   checkError("rasterizing the quadrangle")
-  # TODO(#12): there is no way to transform the image for the user
 
   glFlush()
   checkError("flush")
