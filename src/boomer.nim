@@ -90,7 +90,7 @@ proc mouse(button, state, x, y: cint) {.cdecl.} =
   echo "mouse: ", button, " ", state, " ", x, " ", y
   let p: Vec2 = (x.float, y.float)
 
-  # TODO: mouse scrolling is very X11 specific (despite using GLUT)
+  # TODO(#23): mouse scrolling is very X11 specific (despite using GLUT)
   #   We rely on scrolling being reported as pressing mouse buttons 3
   #   and 4. May not work on other platforms.
   case state:
