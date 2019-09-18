@@ -115,7 +115,7 @@ proc mouse(button, state, x, y: cint) {.cdecl.} =
   else:
     discard
 
-# TODO: try adding inertia to the dragging
+# TODO(#24): try adding inertia to the dragging
 #   Dragging fills a little bit stiff. Let's try to add some inertia
 #   with easing out.
 proc motion(x, y: cint) {.cdecl.} =
