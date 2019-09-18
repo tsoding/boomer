@@ -3,6 +3,7 @@ with import <nixpkgs> {}; {
         name = "boomer-env";
         buildInputs = [ stdenv
                         gcc
+                        gdb
                         pkgconfig
                         nim
                         xorg.libX11
