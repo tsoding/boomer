@@ -62,13 +62,28 @@ proc display() {.cdecl.} =
   glutSwapBuffers()
 
 proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
-  discard
+  echo "reshape ", width, " ", height
+
+const
+  GLUT_WHEEL_UP = 3
+  GLUT_WHEEL_DOWN = 4
 
 proc mouse(button, state, x, y: cint) {.cdecl.} =
+  echo "mouse: ", button, " ", state, " ", x, " ", y
+  const SCROLL_SPEED = 0.2
   case state
   of GLUT_DOWN:
-    anchorX = x.float - translateX
-    anchorY = y.float - translateY
+    case button
+    of GLUT_LEFT_BUTTON:
+      anchorX = x.float - translateX
+      anchorY = y.float - translateY
+    # TODO: mouse scrolling is very X11 specific (despite using GLUT)
+    of GLUT_WHEEL_UP:
+      scale += SCROLL_SPEED
+    of GLUT_WHEEL_DOWN:
+      scale -= SCROLL_SPEED
+    else:
+      discard
   else:
     discard
 
@@ -77,15 +92,8 @@ proc motion(x, y: cint) {.cdecl.} =
   translateX = x.float - anchorX
   translateY = y.float - anchorY
 
-# TODO(#16): scaling should be done by scrolling mouse wheel
 proc keyboard(c: int8, v1, v2: cint) {.cdecl.} =
-  case c
-  of 'w'.ord:
-    scale += 0.1
-  of 's'.ord:
-    scale -= 0.1
-  else:
-    discard
+  echo "keyboard ", c, " ", v1, " ", v2 
 
 # NOTE: it's not possible to deallocate the returned Image because the
 # reference to XImage is lost.
