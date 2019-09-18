@@ -18,8 +18,10 @@ $ ./boomer
 ## NixOS Overlay
 
 ```
+$ git clone git://github.com/tsoding/boomer.git /path/to/boomer
 $ mkdir -p ~/.config/nixpkgs/overlays
-$ cp -r ./overlay/ ~/.config/nixpkgs/overlays/boomer
+$ cd ~/.config/nixpkgs/overlays
+$ ln -s /path/to/boomer/overlay/ boomer
 $ nix-env -iA nixos.boomer
 ```
 
