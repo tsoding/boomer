@@ -77,6 +77,7 @@ proc display() =
 
   glPopMatrix()
 
+# TODO(#29): get rid of custom X11 button constants
 const
   LEFT_BUTTON = 1
   WHEEL_UP = 4
