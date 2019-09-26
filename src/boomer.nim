@@ -142,6 +142,7 @@ proc main() =
   swa.event_mask = ButtonPressMask or ButtonReleaseMask or KeyPressMask or
                    PointerMotionMask or ExposureMask or ClientMessage
 
+  # TODO(#8): the window should be the size of the screen
   var win = XCreateWindow(
     display, root,
     0, 0, image.width.cuint, image.height.cuint, 0,
