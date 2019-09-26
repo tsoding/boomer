@@ -1,7 +1,7 @@
 import x11/xlib, x11/x, x11/xutil
-import opengl, opengl/glx, opengl/glu, opengl/glut
+import opengl, opengl/glx
 
-const FPS = 60
+const FPS: int = 60
 const SCROLL_SPEED = 0.1
 
 template checkError(context: string) =
@@ -21,6 +21,7 @@ var translate: Vec2 = (0.0, 0.0)
 var prev: Vec2 = (0.0, 0.0)
 var scale = 1.0
 var window: Vec2 = (0.0, 0.0)
+var drag: bool = false
 
 proc `-`(v1: Vec2, v2: Vec2): Vec2 {.inline.} = (v1.x - v2.x, v1.y - v2.y)
 proc `+`(v1: Vec2, v2: Vec2): Vec2 {.inline.} = (v1.x + v2.x, v1.y + v2.y)
@@ -47,7 +48,7 @@ proc saveToPPM(filePath: string, image: Image) =
     f.write(image.pixels[i * 4 + 1])
     f.write(image.pixels[i * 4 + 0])
 
-proc display() {.cdecl.} =
+proc display() =
   glClearColor(0.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -76,70 +77,15 @@ proc display() {.cdecl.} =
 
   glPopMatrix()
 
-  glutSwapBuffers()
-
-proc reshape(width: GLsizei, height: GLsizei) {.cdecl.} =
-  echo "reshape ", width, " ", height
-  window = (width.float, height.float)
-
+# TODO(#29): get rid of custom X11 button constants
 const
-  GLUT_WHEEL_UP = 3
-  GLUT_WHEEL_DOWN = 4
-
-proc mouse(button, state, x, y: cint) {.cdecl.} =
-  echo "mouse: ", button, " ", state, " ", x, " ", y
-  let p: Vec2 = (x.float, y.float)
-
-  # TODO(#23): mouse scrolling is very X11 specific (despite using GLUT)
-  #   We rely on scrolling being reported as pressing mouse buttons 3
-  #   and 4. May not work on other platforms.
-  case state:
-  of GLUT_DOWN:
-    case button:
-    of GLUT_LEFT_BUTTON:
-      prev = p
-    of GLUT_WHEEL_UP:
-      let wp0 = p.world
-      scale += SCROLL_SPEED
-      let wp1 = p.world
-      let dwp = wp1 - wp0
-      translate += dwp
-    of GLUT_WHEEL_DOWN:
-      let wp0 = p.world
-      scale -= SCROLL_SPEED
-      let wp1 = p.world
-      let dwp = wp1 - wp0
-      translate += dwp
-    else:
-      discard
-  else:
-    discard
-
-# TODO(#24): try adding inertia to the dragging
-#   Dragging fills a little bit stiff. Let's try to add some inertia
-#   with easing out.
-proc motion(x, y: cint) {.cdecl.} =
-  let current: Vec2 = (x.float, y.float)
-  translate += current.world - prev.world
-  prev = current
-
-proc keyboard(c: int8, v1, v2: cint) {.cdecl.} =
-  echo "keyboard ", c, " ", v1, " ", v2 
-  case c:
-  of '0'.ord:
-    scale = 1.0
-    translate = (0.0, 0.0)
-  else:
-    discard
+  LEFT_BUTTON = 1
+  WHEEL_UP = 4
+  WHEEL_DOWN = 5
 
 # NOTE: it's not possible to deallocate the returned Image because the
 # reference to XImage is lost.
-proc takeScreenshot(): Image =
-  var display = XOpenDisplay(nil)
-  if display == nil:
-    quit "Failed to open display"
-
-  var root = DefaultRootWindow(display)
+proc takeScreenshot(display: PDisplay, root: TWindow): Image =
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(display, root, addr attributes)
 
@@ -152,38 +98,70 @@ proc takeScreenshot(): Image =
   if screenshot == nil:
     quit "Could not get a screenshot"
 
-  discard XCloseDisplay(display)
-
   result.width = attributes.width
   result.height = attributes.height
   result.bpp = screenshot.bits_per_pixel
   result.pixels = screenshot.data
 
-# TODO(#17): replace GLUT with something where you are not required to do weird thing with timers
-proc timer(x: cint) {.cdecl.} =
-  glutPostRedisplay()
-  glutTimerFunc(16, timer, 1)
-
 proc main() =
-  image = takeScreenshot()
+  var display = XOpenDisplay(nil)
+  if display == nil:
+    quit "Failed to open display"
+  defer:
+    discard XCloseDisplay(display)
 
+  var root = DefaultRootWindow(display)
+
+  image = takeScreenshot(display, root)
   assert image.bpp == 32
 
-  var argc: cint = 0
-  glutInit(addr argc, nil)
-  # TODO(#7): how do you deinit glut?
-  glutInitDisplayMode(GLUT_DOUBLE)
-  # TODO(#8): the window should be the size of the screen
-  glutInitWindowSize(image.width, image.height)
-  glutInitWindowPosition(0, 0)
-  discard glutCreateWindow("Wordpress Application")
+  let screen = XDefaultScreen(display)
+  var glxMajor : int
+  var glxMinor : int
 
-  glutDisplayFunc(display)
-  glutReshapeFunc(reshape)
-  glutTimerFunc(1000 div FPS, timer, 1)
-  glutMotionFunc(motion)
-  glutKeyboardFunc(keyboard)
-  glutMouseFunc(mouse)
+  if (not glXQueryVersion(display, glxMajor, glxMinor) or
+      (glxMajor == 1 and glxMinor < 3) or
+      (glxMajor < 1)):
+    quit "Invalid GLX version. Expected >=1.3"
+  echo("GLX version ", glxMajor, ".", glxMinor)
+  echo("GLX extension: ", $glXQueryExtensionsString(display, screen))
+
+  var attrs = [
+    GLX_RGBA,
+    GLX_DEPTH_SIZE, 24,
+    GLX_DOUBLEBUFFER,
+    None]
+
+  var vi = glXChooseVisual(display, 0, addr attrs[0])
+  if vi == nil:
+    quit "No appropriate visual found"
+
+  echo "Visual ", vi.visualid, " selected"
+  var swa: TXSetWindowAttributes
+  swa.colormap = XCreateColormap(display, root,
+                                 vi.visual, AllocNone)
+  swa.event_mask = ButtonPressMask or ButtonReleaseMask or KeyPressMask or
+                   PointerMotionMask or ExposureMask or ClientMessage
+
+  # TODO(#8): the window should be the size of the screen
+  var win = XCreateWindow(
+    display, root,
+    0, 0, image.width.cuint, image.height.cuint, 0,
+    vi.depth, InputOutput, vi.visual,
+    CWColormap or CWEventMask, addr swa)
+
+  discard XMapWindow(display, win)
+  discard XStoreName(display, win, "Wordpress Application")
+
+  var wmDeleteMessage = XInternAtom(
+    display, "WM_DELETE_WINDOW",
+    false.TBool)
+
+  discard XSetWMProtocols(display, win,
+                          addr wmDeleteMessage, 1)
+
+  var glc = glXCreateContext(display, vi, nil, GL_TRUE)
+  discard glXMakeCurrent(display, win, glc)
 
   loadExtensions()
 
@@ -220,7 +198,74 @@ proc main() =
                   GL_TEXTURE_MAG_FILTER,
                   GL_NEAREST)
 
-  glutMainLoop()
+  glViewport(0, 0, image.width, image.height)
+  var quitting = false
+  while not quitting:
+    var xev: TXEvent
+    while XPending(display) > 0:
+      discard XNextEvent(display, addr xev)
+      case xev.theType
+      of Expose:
+        discard
+
+      # TODO(#24): try adding inertia to the dragging
+      #   Dragging fills a little bit stiff. Let's try to add some inertia
+      #   with easing out.
+      of MotionNotify:
+        if drag:
+          let current: Vec2 = (xev.xmotion.x.float,
+                               xev.xmotion.y.float)
+          translate += current.world - prev.world
+          prev = current
+
+      of ClientMessage:
+        if cast[TAtom](xev.xclient.data.l[0]) == wmDeleteMessage:
+          quitting = true
+
+      of KeyPress:
+        case xev.xkey.keycode
+        of 19:
+          scale = 1.0
+          translate = (0.0, 0.0)
+        else:
+          discard
+
+      of ButtonPress:
+        let p: Vec2 = (xev.xbutton.x.float,
+                       xev.xbutton.y.float)
+        case xev.xbutton.button
+        of LEFT_BUTTON:
+          prev = p
+          drag = true
+
+        of WHEEL_UP:
+          let wp0 = p.world
+          scale += SCROLL_SPEED
+          let wp1 = p.world
+          let dwp = wp1 - wp0
+          translate += dwp
+
+        of WHEEL_DOWN:
+          let wp0 = p.world
+          scale -= SCROLL_SPEED
+          let wp1 = p.world
+          let dwp = wp1 - wp0
+          translate += dwp
+        else:
+          discard
+
+      of ButtonRelease:
+        case xev.xbutton.button
+        of LEFT_BUTTON:
+          drag = false
+        else:
+          discard
+      else:
+        discard
+
+    display()
+
+    glXSwapBuffers(display, win)
 
   # saveToPPM("screenshot.ppm", image)
 
