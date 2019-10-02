@@ -1,8 +1,11 @@
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx
+import math
 
 const FPS: int = 60
 const SCROLL_SPEED = 0.1
+const DRAG_VELOCITY_FACTOR: float = 20.0
+const FRICTION: float = 2000.0
 
 template checkError(context: string) =
   let error = glGetError()
@@ -17,9 +20,10 @@ type Image* = object
 
 # TODO(#11): is there any way to make image not a global variable in GLUT?
 var image: Image
-var translate: Vec2 = (0.0, 0.0)
-var prev: Vec2 = (0.0, 0.0)
+var position: Vec2 = (0.0, 0.0)
+var velocity: Vec2 = (0.0, 0.0)
 var scale = 1.0
+var prev: Vec2 = (0.0, 0.0)
 var window: Vec2 = (0.0, 0.0)
 var drag: bool = false
 
@@ -30,12 +34,25 @@ proc `/`(v: Vec2, s: float): Vec2 {.inline.} = (v.x / s, v.y / s)
 proc `+=`(v1: var Vec2, v2: Vec2) {.inline.} =
   v1.x += v2.x
   v1.y += v2.y
+proc `*=`(v: var Vec2, s: float) {.inline.} =
+  v.x *= s
+  v.y *= s
+
+proc len(v: Vec2): float =
+  sqrt(v.x * v.x + v.y * v.y)
+
+proc norm(v: Vec2): Vec2 =
+  let l = v.len
+  if abs(l) < 1e-9:
+    result = (0.0, 0.0)
+  else:
+    result = (v.x / l, v.y / l)
 
 proc screen(v: Vec2): Vec2 =
-  v * scale + translate
+  v * scale + position
 
 proc world(v: Vec2): Vec2 =
-  (v - translate) / scale
+  (v - position) / scale
 
 proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
@@ -55,7 +72,7 @@ proc display() =
   glPushMatrix()
 
   glScalef(scale, scale, 1.0)
-  glTranslatef(translate.x, translate.y, 0.0)
+  glTranslatef(position.x, position.y, 0.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
@@ -76,6 +93,12 @@ proc display() =
   checkError("flush")
 
   glPopMatrix()
+
+proc update(dt: float) =
+  echo velocity.len
+  if not drag and (velocity.len > 20.0):
+    position += velocity * dt
+    velocity = velocity - velocity.norm * FRICTION * dt
 
 # TODO(#29): get rid of custom X11 button constants
 const
@@ -215,7 +238,8 @@ proc main() =
         if drag:
           let current: Vec2 = (xev.xmotion.x.float,
                                xev.xmotion.y.float)
-          translate += current.world - prev.world
+          position += current.world - prev.world
+          velocity = (current - prev) * DRAG_VELOCITY_FACTOR
           prev = current
 
       of ClientMessage:
@@ -226,7 +250,8 @@ proc main() =
         case xev.xkey.keycode
         of 19:
           scale = 1.0
-          translate = (0.0, 0.0)
+          position = (0.0, 0.0)
+          velocity = (0.0, 0.0)
         else:
           discard
 
@@ -243,14 +268,14 @@ proc main() =
           scale += SCROLL_SPEED
           let wp1 = p.world
           let dwp = wp1 - wp0
-          translate += dwp
+          position += dwp
 
         of WHEEL_DOWN:
           let wp0 = p.world
           scale -= SCROLL_SPEED
           let wp1 = p.world
           let dwp = wp1 - wp0
-          translate += dwp
+          position += dwp
         else:
           discard
 
@@ -263,6 +288,7 @@ proc main() =
       else:
         discard
 
+    update(1.0 / FPS.float)
     display()
 
     glXSwapBuffers(display, win)
