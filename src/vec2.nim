@@ -13,10 +13,10 @@ proc `*=`*(v: var Vec2, s: float) {.inline.} =
   v.x *= s
   v.y *= s
 
-proc len*(v: Vec2): float =
+proc len*(v: Vec2): float {.inline.} =
   sqrt(v.x * v.x + v.y * v.y)
 
-proc norm*(v: Vec2): Vec2 =
+proc norm*(v: Vec2): Vec2 {.inline.} =
   let l = v.len
   if abs(l) < 1e-9:
     result = (0.0, 0.0)
