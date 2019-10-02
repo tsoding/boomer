@@ -2,6 +2,8 @@ import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx
 import math
 
+import vec2
+
 const FPS: int = 60
 const SCROLL_SPEED = 1.0
 const DRAG_VELOCITY_FACTOR: float = 20.0
@@ -12,8 +14,6 @@ template checkError(context: string) =
   let error = glGetError()
   if error != 0.GLenum:
     echo "GL error ", error.GLint, " ", context
-
-type Vec2 = tuple[x: float, y: float]
 
 type Image* = object
   width, height, bpp: cint
@@ -30,27 +30,6 @@ var mouse_position = (0.0, 0.0)
 
 var window: Vec2 = (0.0, 0.0)
 var drag: bool = false
-
-proc `-`(v1: Vec2, v2: Vec2): Vec2 {.inline.} = (v1.x - v2.x, v1.y - v2.y)
-proc `+`(v1: Vec2, v2: Vec2): Vec2 {.inline.} = (v1.x + v2.x, v1.y + v2.y)
-proc `*`(v: Vec2, s: float): Vec2 {.inline.} = (v.x * s, v.y * s)
-proc `/`(v: Vec2, s: float): Vec2 {.inline.} = (v.x / s, v.y / s)
-proc `+=`(v1: var Vec2, v2: Vec2) {.inline.} =
-  v1.x += v2.x
-  v1.y += v2.y
-proc `*=`(v: var Vec2, s: float) {.inline.} =
-  v.x *= s
-  v.y *= s
-
-proc len(v: Vec2): float =
-  sqrt(v.x * v.x + v.y * v.y)
-
-proc norm(v: Vec2): Vec2 =
-  let l = v.len
-  if abs(l) < 1e-9:
-    result = (0.0, 0.0)
-  else:
-    result = (v.x / l, v.y / l)
 
 proc screen(v: Vec2): Vec2 =
   v * camera_scale + camera_position
