@@ -4,6 +4,7 @@ import math
 
 import vec2
 import navigation
+import image
 
 const FPS: int = 60
 
@@ -12,27 +13,12 @@ template checkError(context: string) =
   if error != 0.GLenum:
     echo "GL error ", error.GLint, " ", context
 
-type Image* = object
-  width, height, bpp: cint
-  pixels: cstring
-
 # TODO(#11): is there any way to make image not a global variable in GLUT?
-var image: Image
+var screenshot: Image
 var camera = Camera(scale: 1.0)
 var mouse: Mouse
 
 var window: Vec2 = (0.0, 0.0)
-
-proc saveToPPM(filePath: string, image: Image) =
-  var f = open(filePath, fmWrite)
-  defer: f.close
-  writeLine(f, "P6")
-  writeLine(f, image.width, " ", image.height)
-  writeLine(f, 255)
-  for i in 0..<(image.width * image.height):
-    f.write(image.pixels[i * 4 + 2])
-    f.write(image.pixels[i * 4 + 1])
-    f.write(image.pixels[i * 4 + 0])
 
 proc display() =
   glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -48,13 +34,13 @@ proc display() =
   glVertex2f(0.0, 0.0)
 
   glTexCoord2i(1, 0)
-  glVertex2f(image.width.float, 0.0)
+  glVertex2f(screenshot.width.float, 0.0)
 
   glTexCoord2i(1, 1)
-  glVertex2f(image.width.float, image.height.float)
+  glVertex2f(screenshot.width.float, screenshot.height.float)
 
   glTexCoord2i(0, 1)
-  glVertex2f(0.0, image.height.float)
+  glVertex2f(0.0, screenshot.height.float)
   glEnd()
   checkError("rasterizing the quadrangle")
 
@@ -69,25 +55,6 @@ const
   WHEEL_UP = 4
   WHEEL_DOWN = 5
 
-# NOTE: it's not possible to deallocate the returned Image because the
-# reference to XImage is lost.
-proc takeScreenshot(display: PDisplay, root: TWindow): Image =
-  var attributes: TXWindowAttributes
-  discard XGetWindowAttributes(display, root, addr attributes)
-
-  var screenshot = XGetImage(display, root,
-                             0, 0,
-                             attributes.width.cuint,
-                             attributes.height.cuint,
-                             AllPlanes,
-                             ZPixmap)
-  if screenshot == nil:
-    quit "Could not get a screenshot"
-
-  result.width = attributes.width
-  result.height = attributes.height
-  result.bpp = screenshot.bits_per_pixel
-  result.pixels = screenshot.data
 
 proc main() =
   var display = XOpenDisplay(nil)
@@ -98,8 +65,8 @@ proc main() =
 
   var root = DefaultRootWindow(display)
 
-  image = takeScreenshot(display, root)
-  assert image.bpp == 32
+  screenshot = takeScreenshot(display, root)
+  assert screenshot.bpp == 32
 
   let screen = XDefaultScreen(display)
   var glxMajor : int
@@ -132,7 +99,7 @@ proc main() =
   # TODO(#8): the window should be the size of the screen
   var win = XCreateWindow(
     display, root,
-    0, 0, image.width.cuint, image.height.cuint, 0,
+    0, 0, screenshot.width.cuint, screenshot.height.cuint, 0,
     vi.depth, InputOutput, vi.visual,
     CWColormap or CWEventMask, addr swa)
 
@@ -161,19 +128,19 @@ proc main() =
   glTexImage2D(GL_TEXTURE_2D,
                0,
                GL_RGB.GLint,
-               image.width,
-               image.height,
+               screenshot.width,
+               screenshot.height,
                0,
                # TODO(#13): the texture format is hardcoded
                GL_BGRA,
                GL_UNSIGNED_BYTE,
-               image.pixels)
+               screenshot.pixels)
   checkError("loading texture")
 
   glEnable(GL_TEXTURE_2D)
 
-  glOrtho(0.0, image.width.float,
-          image.height.float, 0.0,
+  glOrtho(0.0, screenshot.width.float,
+          screenshot.height.float, 0.0,
           -1.0, 1.0)
   checkError("setting transforms")
 
@@ -184,7 +151,7 @@ proc main() =
                   GL_TEXTURE_MAG_FILTER,
                   GL_NEAREST)
 
-  glViewport(0, 0, image.width, image.height)
+  glViewport(0, 0, screenshot.width, screenshot.height)
   var quitting = false
   while not quitting:
     var xev: TXEvent
@@ -196,7 +163,7 @@ proc main() =
 
       of MotionNotify:
         mouse.curr = (xev.xmotion.x.float,
-                              xev.xmotion.y.float)
+                      xev.xmotion.y.float)
 
         if mouse.drag:
           camera.position += camera.world(mouse.curr) - camera.world(mouse.prev)
