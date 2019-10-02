@@ -20,10 +20,13 @@ type Image* = object
 
 # TODO(#11): is there any way to make image not a global variable in GLUT?
 var image: Image
-var position: Vec2 = (0.0, 0.0)
-var velocity: Vec2 = (0.0, 0.0)
-var scale = 1.0
-var prev: Vec2 = (0.0, 0.0)
+var camera_position: Vec2 = (0.0, 0.0)
+var camera_prev: Vec2 = (0.0, 0.0)
+var camera_velocity: Vec2 = (0.0, 0.0)
+var camera_scale = 1.0
+var camera_delta_scale = 0.0
+var mouse_position = (0.0, 0.0)
+
 var window: Vec2 = (0.0, 0.0)
 var drag: bool = false
 
@@ -49,10 +52,10 @@ proc norm(v: Vec2): Vec2 =
     result = (v.x / l, v.y / l)
 
 proc screen(v: Vec2): Vec2 =
-  v * scale + position
+  v * camera_scale + camera_position
 
 proc world(v: Vec2): Vec2 =
-  (v - position) / scale
+  (v - camera_position) / camera_scale
 
 proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
@@ -71,8 +74,8 @@ proc display() =
 
   glPushMatrix()
 
-  glScalef(scale, scale, 1.0)
-  glTranslatef(position.x, position.y, 0.0)
+  glScalef(camera_scale, camera_scale, 1.0)
+  glTranslatef(camera_position.x, camera_position.y, 0.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
@@ -95,10 +98,19 @@ proc display() =
   glPopMatrix()
 
 proc update(dt: float) =
-  echo velocity.len
-  if not drag and (velocity.len > 20.0):
-    position += velocity * dt
-    velocity = velocity - velocity.norm * FRICTION * dt
+  echo camera_velocity.len
+
+  if abs(camera_delta_scale) > 0.5:
+    let wp0 = mouse_position.world
+    camera_scale = max(camera_scale + camera_delta_scale * dt, 1.0)
+    let wp1 = mouse_position.world
+    let dwp = wp1 - wp0
+    camera_position += dwp
+    camera_delta_scale -= sgn(camera_delta_scale).float * 5.0 * dt
+
+  if not drag and (camera_velocity.len > 20.0):
+    camera_position += camera_velocity * dt
+    camera_velocity = camera_velocity - camera_velocity.norm * FRICTION * dt
 
 # TODO(#29): get rid of custom X11 button constants
 const
@@ -231,16 +243,14 @@ proc main() =
       of Expose:
         discard
 
-      # TODO(#24): try adding inertia to the dragging
-      #   Dragging fills a little bit stiff. Let's try to add some inertia
-      #   with easing out.
       of MotionNotify:
+        mouse_position = (xev.xmotion.x.float,
+                          xev.xmotion.y.float)
+
         if drag:
-          let current: Vec2 = (xev.xmotion.x.float,
-                               xev.xmotion.y.float)
-          position += current.world - prev.world
-          velocity = (current - prev) * DRAG_VELOCITY_FACTOR
-          prev = current
+          camera_position += mouse_position.world - camera_prev.world
+          camera_velocity = (mouse_position - camera_prev) * DRAG_VELOCITY_FACTOR
+          camera_prev = mouse_position
 
       of ClientMessage:
         if cast[TAtom](xev.xclient.data.l[0]) == wmDeleteMessage:
@@ -249,33 +259,25 @@ proc main() =
       of KeyPress:
         case xev.xkey.keycode
         of 19:
-          scale = 1.0
-          position = (0.0, 0.0)
-          velocity = (0.0, 0.0)
+          camera_scale = 1.0
+          camera_delta_scale = 0.0
+          camera_position = (0.0, 0.0)
+          camera_velocity = (0.0, 0.0)
         else:
           discard
 
       of ButtonPress:
-        let p: Vec2 = (xev.xbutton.x.float,
-                       xev.xbutton.y.float)
         case xev.xbutton.button
         of LEFT_BUTTON:
-          prev = p
+          camera_prev = mouse_position
           drag = true
 
         of WHEEL_UP:
-          let wp0 = p.world
-          scale += SCROLL_SPEED
-          let wp1 = p.world
-          let dwp = wp1 - wp0
-          position += dwp
+          camera_delta_scale += 1.0
 
         of WHEEL_DOWN:
-          let wp0 = p.world
-          scale -= SCROLL_SPEED
-          let wp1 = p.world
-          let dwp = wp1 - wp0
-          position += dwp
+          camera_delta_scale -= 1.0
+
         else:
           discard
 
