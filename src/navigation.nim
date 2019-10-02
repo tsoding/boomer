@@ -24,8 +24,6 @@ proc screen*(camera: Camera, v: Vec2): Vec2 =
   v * camera.scale + camera.position
 
 proc update*(camera: var Camera, dt: float, mouse: Mouse) =
-  echo camera.velocity.len
-
   if abs(camera.delta_scale) > 0.5:
     let wp0 = camera.world(mouse.curr)
     camera.scale = max(camera.scale + camera.delta_scale * dt, 1.0)

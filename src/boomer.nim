@@ -13,12 +13,7 @@ template checkError(context: string) =
   if error != 0.GLenum:
     echo "GL error ", error.GLint, " ", context
 
-# TODO(#11): is there any way to make image not a global variable in GLUT?
-var screenshot: Image
-var camera = Camera(scale: 1.0)
-var mouse: Mouse
-
-proc display() =
+proc display(screenshot: Image, camera: Camera) =
   glClearColor(0.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -53,7 +48,6 @@ const
   WHEEL_UP = 4
   WHEEL_DOWN = 5
 
-
 proc main() =
   var display = XOpenDisplay(nil)
   if display == nil:
@@ -63,7 +57,7 @@ proc main() =
 
   var root = DefaultRootWindow(display)
 
-  screenshot = takeScreenshot(display, root)
+  var screenshot = takeScreenshot(display, root)
   assert screenshot.bpp == 32
 
   let screen = XDefaultScreen(display)
@@ -150,7 +144,11 @@ proc main() =
                   GL_NEAREST)
 
   glViewport(0, 0, screenshot.width, screenshot.height)
+
   var quitting = false
+  var camera = Camera(scale: 1.0)
+  var mouse: Mouse
+
   while not quitting:
     var xev: TXEvent
     while XPending(display) > 0:
@@ -207,7 +205,7 @@ proc main() =
         discard
 
     camera.update(1.0 / FPS.float, mouse)
-    display()
+    screenshot.display(camera)
 
     glXSwapBuffers(display, win)
 
