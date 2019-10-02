@@ -18,8 +18,6 @@ var screenshot: Image
 var camera = Camera(scale: 1.0)
 var mouse: Mouse
 
-var window: Vec2 = (0.0, 0.0)
-
 proc display() =
   glClearColor(0.0, 0.0, 0.0, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
