@@ -15,12 +15,12 @@ let
   };
 in stdenv.mkDerivation rec {
   pname = "boomer";
-  version = "unstable-2019-09-26";
+  version = "unstable-2019-10-03";
   src = fetchFromGitHub {
     owner = "tsoding";
     repo = "boomer";
-    rev = "6bd8151d2fbd65a6c28d0b10f93de063dfbe7180";
-    sha256 = "0q1fbswx2yspp4i7cyqilrr64nzfsp65ayh5011hzqnkjy1r808d";
+    rev = "00aad4f1b9d200d36c3cb6f97a24d9df31e789ac";
+    sha256 = "1hl6mfw9kd6m5ih8yq4833y3wmqw3glcsvllgiswmns54a0yndm3";
   };
   buildInputs = [ nim libX11 libGL freeglut ];
   buildPhase = ''
