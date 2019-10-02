@@ -3,9 +3,10 @@ import opengl, opengl/glx
 import math
 
 const FPS: int = 60
-const SCROLL_SPEED = 0.1
+const SCROLL_SPEED = 1.0
 const DRAG_VELOCITY_FACTOR: float = 20.0
 const FRICTION: float = 2000.0
+const SCALE_FRICTION: float = 5.0
 
 template checkError(context: string) =
   let error = glGetError()
@@ -106,7 +107,7 @@ proc update(dt: float) =
     let wp1 = mouse_position.world
     let dwp = wp1 - wp0
     camera_position += dwp
-    camera_delta_scale -= sgn(camera_delta_scale).float * 5.0 * dt
+    camera_delta_scale -= sgn(camera_delta_scale).float * SCALE_FRICTION * dt
 
   if not drag and (camera_velocity.len > 20.0):
     camera_position += camera_velocity * dt
@@ -273,10 +274,10 @@ proc main() =
           drag = true
 
         of WHEEL_UP:
-          camera_delta_scale += 1.0
+          camera_delta_scale += SCROLL_SPEED
 
         of WHEEL_DOWN:
-          camera_delta_scale -= 1.0
+          camera_delta_scale -= SCROLL_SPEED
 
         else:
           discard
