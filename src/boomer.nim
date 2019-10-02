@@ -3,12 +3,9 @@ import opengl, opengl/glx
 import math
 
 import vec2
+import navigation
 
 const FPS: int = 60
-const SCROLL_SPEED = 1.0
-const DRAG_VELOCITY_FACTOR: float = 20.0
-const FRICTION: float = 2000.0
-const SCALE_FRICTION: float = 5.0
 
 template checkError(context: string) =
   let error = glGetError()
@@ -21,21 +18,10 @@ type Image* = object
 
 # TODO(#11): is there any way to make image not a global variable in GLUT?
 var image: Image
-var camera_position: Vec2 = (0.0, 0.0)
-var camera_prev: Vec2 = (0.0, 0.0)
-var camera_velocity: Vec2 = (0.0, 0.0)
-var camera_scale = 1.0
-var camera_delta_scale = 0.0
-var mouse_position = (0.0, 0.0)
+var camera = Camera(scale: 1.0)
+var mouse: Mouse
 
 var window: Vec2 = (0.0, 0.0)
-var drag: bool = false
-
-proc screen(v: Vec2): Vec2 =
-  v * camera_scale + camera_position
-
-proc world(v: Vec2): Vec2 =
-  (v - camera_position) / camera_scale
 
 proc saveToPPM(filePath: string, image: Image) =
   var f = open(filePath, fmWrite)
@@ -54,8 +40,8 @@ proc display() =
 
   glPushMatrix()
 
-  glScalef(camera_scale, camera_scale, 1.0)
-  glTranslatef(camera_position.x, camera_position.y, 0.0)
+  glScalef(camera.scale, camera.scale, 1.0)
+  glTranslatef(camera.position.x, camera.position.y, 0.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
@@ -76,21 +62,6 @@ proc display() =
   checkError("flush")
 
   glPopMatrix()
-
-proc update(dt: float) =
-  echo camera_velocity.len
-
-  if abs(camera_delta_scale) > 0.5:
-    let wp0 = mouse_position.world
-    camera_scale = max(camera_scale + camera_delta_scale * dt, 1.0)
-    let wp1 = mouse_position.world
-    let dwp = wp1 - wp0
-    camera_position += dwp
-    camera_delta_scale -= sgn(camera_delta_scale).float * SCALE_FRICTION * dt
-
-  if not drag and (camera_velocity.len > 20.0):
-    camera_position += camera_velocity * dt
-    camera_velocity = camera_velocity - camera_velocity.norm * FRICTION * dt
 
 # TODO(#29): get rid of custom X11 button constants
 const
@@ -224,13 +195,13 @@ proc main() =
         discard
 
       of MotionNotify:
-        mouse_position = (xev.xmotion.x.float,
-                          xev.xmotion.y.float)
+        mouse.curr = (xev.xmotion.x.float,
+                              xev.xmotion.y.float)
 
-        if drag:
-          camera_position += mouse_position.world - camera_prev.world
-          camera_velocity = (mouse_position - camera_prev) * DRAG_VELOCITY_FACTOR
-          camera_prev = mouse_position
+        if mouse.drag:
+          camera.position += camera.world(mouse.curr) - camera.world(mouse.prev)
+          camera.velocity = (mouse.curr - mouse.prev) * DRAG_VELOCITY_FACTOR
+          mouse.prev = mouse.curr
 
       of ClientMessage:
         if cast[TAtom](xev.xclient.data.l[0]) == wmDeleteMessage:
@@ -239,24 +210,24 @@ proc main() =
       of KeyPress:
         case xev.xkey.keycode
         of 19:
-          camera_scale = 1.0
-          camera_delta_scale = 0.0
-          camera_position = (0.0, 0.0)
-          camera_velocity = (0.0, 0.0)
+          camera.scale = 1.0
+          camera.delta_scale = 0.0
+          camera.position = (0.0, 0.0)
+          camera.velocity = (0.0, 0.0)
         else:
           discard
 
       of ButtonPress:
         case xev.xbutton.button
         of LEFT_BUTTON:
-          camera_prev = mouse_position
-          drag = true
+          mouse.prev = mouse.curr
+          mouse.drag = true
 
         of WHEEL_UP:
-          camera_delta_scale += SCROLL_SPEED
+          camera.delta_scale += SCROLL_SPEED
 
         of WHEEL_DOWN:
-          camera_delta_scale -= SCROLL_SPEED
+          camera.delta_scale -= SCROLL_SPEED
 
         else:
           discard
@@ -264,13 +235,13 @@ proc main() =
       of ButtonRelease:
         case xev.xbutton.button
         of LEFT_BUTTON:
-          drag = false
+          mouse.drag = false
         else:
           discard
       else:
         discard
 
-    update(1.0 / FPS.float)
+    camera.update(1.0 / FPS.float, mouse)
     display()
 
     glXSwapBuffers(display, win)
