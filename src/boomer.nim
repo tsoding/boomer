@@ -1,52 +1,22 @@
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx
+import math
+
+import vec2
+import navigation
+import image
 
 const FPS: int = 60
-const SCROLL_SPEED = 0.1
 
 template checkError(context: string) =
   let error = glGetError()
   if error != 0.GLenum:
     echo "GL error ", error.GLint, " ", context
 
-type Vec2 = tuple[x: float, y: float]
-
-type Image* = object
-  width, height, bpp: cint
-  pixels: cstring
-
 # TODO(#11): is there any way to make image not a global variable in GLUT?
-var image: Image
-var translate: Vec2 = (0.0, 0.0)
-var prev: Vec2 = (0.0, 0.0)
-var scale = 1.0
-var window: Vec2 = (0.0, 0.0)
-var drag: bool = false
-
-proc `-`(v1: Vec2, v2: Vec2): Vec2 {.inline.} = (v1.x - v2.x, v1.y - v2.y)
-proc `+`(v1: Vec2, v2: Vec2): Vec2 {.inline.} = (v1.x + v2.x, v1.y + v2.y)
-proc `*`(v: Vec2, s: float): Vec2 {.inline.} = (v.x * s, v.y * s)
-proc `/`(v: Vec2, s: float): Vec2 {.inline.} = (v.x / s, v.y / s)
-proc `+=`(v1: var Vec2, v2: Vec2) {.inline.} =
-  v1.x += v2.x
-  v1.y += v2.y
-
-proc screen(v: Vec2): Vec2 =
-  v * scale + translate
-
-proc world(v: Vec2): Vec2 =
-  (v - translate) / scale
-
-proc saveToPPM(filePath: string, image: Image) =
-  var f = open(filePath, fmWrite)
-  defer: f.close
-  writeLine(f, "P6")
-  writeLine(f, image.width, " ", image.height)
-  writeLine(f, 255)
-  for i in 0..<(image.width * image.height):
-    f.write(image.pixels[i * 4 + 2])
-    f.write(image.pixels[i * 4 + 1])
-    f.write(image.pixels[i * 4 + 0])
+var screenshot: Image
+var camera = Camera(scale: 1.0)
+var mouse: Mouse
 
 proc display() =
   glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -54,21 +24,21 @@ proc display() =
 
   glPushMatrix()
 
-  glScalef(scale, scale, 1.0)
-  glTranslatef(translate.x, translate.y, 0.0)
+  glScalef(camera.scale, camera.scale, 1.0)
+  glTranslatef(camera.position.x, camera.position.y, 0.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
   glVertex2f(0.0, 0.0)
 
   glTexCoord2i(1, 0)
-  glVertex2f(image.width.float, 0.0)
+  glVertex2f(screenshot.width.float, 0.0)
 
   glTexCoord2i(1, 1)
-  glVertex2f(image.width.float, image.height.float)
+  glVertex2f(screenshot.width.float, screenshot.height.float)
 
   glTexCoord2i(0, 1)
-  glVertex2f(0.0, image.height.float)
+  glVertex2f(0.0, screenshot.height.float)
   glEnd()
   checkError("rasterizing the quadrangle")
 
@@ -83,25 +53,6 @@ const
   WHEEL_UP = 4
   WHEEL_DOWN = 5
 
-# NOTE: it's not possible to deallocate the returned Image because the
-# reference to XImage is lost.
-proc takeScreenshot(display: PDisplay, root: TWindow): Image =
-  var attributes: TXWindowAttributes
-  discard XGetWindowAttributes(display, root, addr attributes)
-
-  var screenshot = XGetImage(display, root,
-                             0, 0,
-                             attributes.width.cuint,
-                             attributes.height.cuint,
-                             AllPlanes,
-                             ZPixmap)
-  if screenshot == nil:
-    quit "Could not get a screenshot"
-
-  result.width = attributes.width
-  result.height = attributes.height
-  result.bpp = screenshot.bits_per_pixel
-  result.pixels = screenshot.data
 
 proc main() =
   var display = XOpenDisplay(nil)
@@ -112,8 +63,8 @@ proc main() =
 
   var root = DefaultRootWindow(display)
 
-  image = takeScreenshot(display, root)
-  assert image.bpp == 32
+  screenshot = takeScreenshot(display, root)
+  assert screenshot.bpp == 32
 
   let screen = XDefaultScreen(display)
   var glxMajor : int
@@ -146,7 +97,7 @@ proc main() =
   # TODO(#8): the window should be the size of the screen
   var win = XCreateWindow(
     display, root,
-    0, 0, image.width.cuint, image.height.cuint, 0,
+    0, 0, screenshot.width.cuint, screenshot.height.cuint, 0,
     vi.depth, InputOutput, vi.visual,
     CWColormap or CWEventMask, addr swa)
 
@@ -175,19 +126,19 @@ proc main() =
   glTexImage2D(GL_TEXTURE_2D,
                0,
                GL_RGB.GLint,
-               image.width,
-               image.height,
+               screenshot.width,
+               screenshot.height,
                0,
                # TODO(#13): the texture format is hardcoded
                GL_BGRA,
                GL_UNSIGNED_BYTE,
-               image.pixels)
+               screenshot.pixels)
   checkError("loading texture")
 
   glEnable(GL_TEXTURE_2D)
 
-  glOrtho(0.0, image.width.float,
-          image.height.float, 0.0,
+  glOrtho(0.0, screenshot.width.float,
+          screenshot.height.float, 0.0,
           -1.0, 1.0)
   checkError("setting transforms")
 
@@ -198,7 +149,7 @@ proc main() =
                   GL_TEXTURE_MAG_FILTER,
                   GL_NEAREST)
 
-  glViewport(0, 0, image.width, image.height)
+  glViewport(0, 0, screenshot.width, screenshot.height)
   var quitting = false
   while not quitting:
     var xev: TXEvent
@@ -208,15 +159,14 @@ proc main() =
       of Expose:
         discard
 
-      # TODO(#24): try adding inertia to the dragging
-      #   Dragging fills a little bit stiff. Let's try to add some inertia
-      #   with easing out.
       of MotionNotify:
-        if drag:
-          let current: Vec2 = (xev.xmotion.x.float,
-                               xev.xmotion.y.float)
-          translate += current.world - prev.world
-          prev = current
+        mouse.curr = (xev.xmotion.x.float,
+                      xev.xmotion.y.float)
+
+        if mouse.drag:
+          camera.position += camera.world(mouse.curr) - camera.world(mouse.prev)
+          camera.velocity = (mouse.curr - mouse.prev) * DRAG_VELOCITY_FACTOR
+          mouse.prev = mouse.curr
 
       of ClientMessage:
         if cast[TAtom](xev.xclient.data.l[0]) == wmDeleteMessage:
@@ -225,44 +175,38 @@ proc main() =
       of KeyPress:
         case xev.xkey.keycode
         of 19:
-          scale = 1.0
-          translate = (0.0, 0.0)
+          camera.scale = 1.0
+          camera.delta_scale = 0.0
+          camera.position = (0.0, 0.0)
+          camera.velocity = (0.0, 0.0)
         else:
           discard
 
       of ButtonPress:
-        let p: Vec2 = (xev.xbutton.x.float,
-                       xev.xbutton.y.float)
         case xev.xbutton.button
         of LEFT_BUTTON:
-          prev = p
-          drag = true
+          mouse.prev = mouse.curr
+          mouse.drag = true
 
         of WHEEL_UP:
-          let wp0 = p.world
-          scale += SCROLL_SPEED
-          let wp1 = p.world
-          let dwp = wp1 - wp0
-          translate += dwp
+          camera.delta_scale += SCROLL_SPEED
 
         of WHEEL_DOWN:
-          let wp0 = p.world
-          scale -= SCROLL_SPEED
-          let wp1 = p.world
-          let dwp = wp1 - wp0
-          translate += dwp
+          camera.delta_scale -= SCROLL_SPEED
+
         else:
           discard
 
       of ButtonRelease:
         case xev.xbutton.button
         of LEFT_BUTTON:
-          drag = false
+          mouse.drag = false
         else:
           discard
       else:
         discard
 
+    camera.update(1.0 / FPS.float, mouse)
     display()
 
     glXSwapBuffers(display, win)
