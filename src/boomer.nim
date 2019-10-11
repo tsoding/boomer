@@ -51,10 +51,13 @@ const
 
 proc main() =
   var config = defaultConfig
-  var configFile = ""
+  let configFile = block:
+    if paramCount() > 0:
+      paramStr(1)
+    else:
+      getConfigDir() / "boomer" / "config"
 
-  if paramCount() > 0:
-    configFile = paramStr(1)
+  if existsFile configFile:
     config = loadConfig(configFile)
 
   echo "Using config: ", config
