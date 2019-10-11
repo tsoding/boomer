@@ -1,12 +1,13 @@
+import os
+import math
+
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx
-import math
 
 import vec2
 import navigation
 import image
-
-const FPS: int = 60
+import config
 
 template checkError(context: string) =
   let error = glGetError()
@@ -49,6 +50,15 @@ const
   WHEEL_DOWN = 5
 
 proc main() =
+  var config = defaultConfig
+  var configFile = ""
+
+  if paramCount() > 0:
+    configFile = paramStr(1)
+    config = loadConfig(configFile)
+
+  echo "Using config: ", config
+
   var display = XOpenDisplay(nil)
   if display == nil:
     quit "Failed to open display"
@@ -149,6 +159,7 @@ proc main() =
   var camera = Camera(scale: 1.0)
   var mouse: Mouse
 
+
   while not quitting:
     var xev: TXEvent
     while XPending(display) > 0:
@@ -163,7 +174,7 @@ proc main() =
 
         if mouse.drag:
           camera.position += camera.world(mouse.curr) - camera.world(mouse.prev)
-          camera.velocity = (mouse.curr - mouse.prev) * DRAG_VELOCITY_FACTOR
+          camera.velocity = (mouse.curr - mouse.prev) * config.drag_velocity_factor
           mouse.prev = mouse.curr
 
       of ClientMessage:
@@ -177,6 +188,11 @@ proc main() =
           camera.delta_scale = 0.0
           camera.position = (0.0, 0.0)
           camera.velocity = (0.0, 0.0)
+        of 24:
+          quitting = true
+        of 27:
+          if configFile.len > 0:
+            config = loadConfig(configFile)
         else:
           discard
 
@@ -187,10 +203,10 @@ proc main() =
           mouse.drag = true
 
         of WHEEL_UP:
-          camera.delta_scale += SCROLL_SPEED
+          camera.delta_scale += config.scroll_speed
 
         of WHEEL_DOWN:
-          camera.delta_scale -= SCROLL_SPEED
+          camera.delta_scale -= config.scroll_speed
 
         else:
           discard
@@ -204,7 +220,7 @@ proc main() =
       else:
         discard
 
-    camera.update(1.0 / FPS.float, mouse)
+    camera.update(config, 1.0 / config.fps.float, mouse)
     screenshot.display(camera)
 
     glXSwapBuffers(display, win)
