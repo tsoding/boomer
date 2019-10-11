@@ -1,56 +1,37 @@
 import macros
+import strutils
 
 type Config* = object
-  scrollSpeed: float
-  dragVelocityFactor: float
-  dragFriction: float
-  scaleFriction: float
+  scrollSpeed*: float
+  dragVelocityFactor*: float
+  dragFriction*: float
+  scaleFriction*: float
+  fps*: int
 
-macro saveConfig*(config: typed, filePath: typed): untyped =
-  if config.getType.typeKind != ntyObject:
-    error("Expected object kind", config)
+const defaultConfig* = Config(
+  scroll_speed: 1.0,
+  drag_velocity_factor: 20.0,
+  drag_friction: 2000.0,
+  scale_friction: 5.0,
+  fps: 60
+)
 
-  result = nnkStmtList.newTree(
-    nnkVarSection.newTree(
-      nnkIdentDefs.newTree(
-        newIdentNode("f"),
-        newEmptyNode(),
-        nnkCall.newTree(
-          newIdentNode("open"),
-          newLit("hello.conf"),
-          newIdentNode("fmWrite")
-        )
-      )
-    ),
-    nnkLetSection.newTree(
-      nnkIdentDefs.newTree(
-        newIdentNode("config"),
-        newEmptyNode(),
-        config
-      )
-  ))
-
-  for i in config.getType[2].children:
-    result.add(nnkCall.newTree(
-      nnkDotExpr.newTree(
-        newIdentNode("f"),
-        newIdentNode("writeLine")
-      ),
-      newLit(i.repr),
-      newLit("="),
-      nnkDotExpr.newTree(
-        newIdentNode("config"),
-        newIdentNode(i.repr)
-      )
-    ))
-
-# proc saveConfig(config: Config, filePath: string) =
-#   var f = open(filePath, fmWrite)
-#   defer: f.close
-#   f.writeLine("scroll_speed=", config.scrollSpeed)
-#   f.writeLine("drag_velocity_factor=", config.drag_velocity_factor)
-#   f.writeLine("drag_friction=", config.drag_friction)
-#   f.writeLine("scale_friction=", config.scale_friction)
-
-proc loadConfig(filePath: string): Config =
-  discard
+proc loadConfig*(filePath: string): Config =
+  result = defaultConfig
+  for line in filePath.lines:
+    let pair = line.split('=')
+    let key = pair[0].strip
+    let value = pair[1].strip
+    case key
+    of "scroll_speed":
+      result.scroll_speed = value.parseFloat
+    of "drag_velocity_factor":
+      result.drag_velocity_factor = value.parseFloat
+    of "drag_friction":
+      result.drag_friction = value.parseFloat
+    of "scale_friction":
+      result.scale_friction = value.parseFloat
+    of "fps":
+      result.fps = value.parseInt
+    else:
+      raise newException(Exception, "Unknown config key " & key)

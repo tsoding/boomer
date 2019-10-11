@@ -5,8 +5,7 @@ import math
 import vec2
 import navigation
 import image
-
-const FPS: int = 60
+import config
 
 template checkError(context: string) =
   let error = glGetError()
@@ -148,6 +147,7 @@ proc main() =
   var quitting = false
   var camera = Camera(scale: 1.0)
   var mouse: Mouse
+  var config = defaultConfig
 
   while not quitting:
     var xev: TXEvent
@@ -163,7 +163,7 @@ proc main() =
 
         if mouse.drag:
           camera.position += camera.world(mouse.curr) - camera.world(mouse.prev)
-          camera.velocity = (mouse.curr - mouse.prev) * DRAG_VELOCITY_FACTOR
+          camera.velocity = (mouse.curr - mouse.prev) * config.drag_velocity_factor
           mouse.prev = mouse.curr
 
       of ClientMessage:
@@ -187,10 +187,10 @@ proc main() =
           mouse.drag = true
 
         of WHEEL_UP:
-          camera.delta_scale += SCROLL_SPEED
+          camera.delta_scale += config.scroll_speed
 
         of WHEEL_DOWN:
-          camera.delta_scale -= SCROLL_SPEED
+          camera.delta_scale -= config.scroll_speed
 
         else:
           discard
@@ -204,7 +204,7 @@ proc main() =
       else:
         discard
 
-    camera.update(1.0 / FPS.float, mouse)
+    camera.update(config, 1.0 / config.fps.float, mouse)
     screenshot.display(camera)
 
     glXSwapBuffers(display, win)
