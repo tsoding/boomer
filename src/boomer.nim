@@ -1,6 +1,8 @@
+import os
+import math
+
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx
-import math
 
 import vec2
 import navigation
@@ -48,6 +50,15 @@ const
   WHEEL_DOWN = 5
 
 proc main() =
+  var config = defaultConfig
+  var configFile = ""
+
+  if paramCount() > 0:
+    configFile = paramStr(1)
+    config = loadConfig(configFile)
+
+  echo "Using config: ", config
+
   var display = XOpenDisplay(nil)
   if display == nil:
     quit "Failed to open display"
@@ -147,7 +158,7 @@ proc main() =
   var quitting = false
   var camera = Camera(scale: 1.0)
   var mouse: Mouse
-  var config = defaultConfig
+
 
   while not quitting:
     var xev: TXEvent
@@ -177,6 +188,11 @@ proc main() =
           camera.delta_scale = 0.0
           camera.position = (0.0, 0.0)
           camera.velocity = (0.0, 0.0)
+        of 24:
+          quitting = true
+        of 27:
+          if configFile.len > 0:
+            config = loadConfig(configFile)
         else:
           discard
 
