@@ -15,15 +15,8 @@ const defaultConfig* = Config(
   fps: 60
 )
 
-func normIdent(s: string): string =
-  if s.len > 0:
-    result.add s[0]
-    for i in 1..s.high:
-      if s[i] != '_':
-        result.add s[i].toLowerAscii
-
 macro parseObject(obj: typed, key, val: string) =
-  result = newNimNode(nnkCaseStmt).add(newCall("normIdent", key))
+  result = newNimNode(nnkCaseStmt).add(key)
   for c in obj.getType[2]:
     let a = case c.getType.typeKind
     of ntyFloat:
@@ -36,7 +29,7 @@ macro parseObject(obj: typed, key, val: string) =
       error "Unsupported type: " & c.getType.`$`
       val
     result.add newNimNode(nnkOfBranch).add(
-      newLit normIdent $c,
+      newLit $c,
       newStmtList(quote do: `obj`.`c` = `a`)
     )
   result.add newNimNode(nnkElse).add(quote do:
