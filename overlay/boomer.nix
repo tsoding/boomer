@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, nim, libX11, libGL, freeglut }:
+{ stdenv, fetchFromGitHub, nim, libX11, libGL, freeglut, nim_1_0 }:
 
 let
   x11-nim = fetchFromGitHub {
@@ -15,14 +15,14 @@ let
   };
 in stdenv.mkDerivation rec {
   pname = "boomer";
-  version = "unstable-2019-10-03";
+  version = "unstable-2019-10-17";
   src = fetchFromGitHub {
     owner = "tsoding";
     repo = "boomer";
-    rev = "00aad4f1b9d200d36c3cb6f97a24d9df31e789ac";
-    sha256 = "1hl6mfw9kd6m5ih8yq4833y3wmqw3glcsvllgiswmns54a0yndm3";
+    rev = "53293f68d4d3e1770270f0c7356a0eb4aa527d4d";
+    sha256 = "0wznrllv25wpbhp4pmcy8hbw2d6xhvrb3k326yxfhimjp4k4ps2n";
   };
-  buildInputs = [ nim libX11 libGL freeglut ];
+  buildInputs = [ nim_1_0 libX11 libGL freeglut ];
   buildPhase = ''
     HOME=$TMPDIR
     nim -p:${x11-nim}/ -p:${opengl-nim}/src c -d:release src/boomer.nim
