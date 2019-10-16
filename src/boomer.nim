@@ -21,7 +21,7 @@ proc display(screenshot: Image, camera: Camera) =
   glPushMatrix()
 
   glScalef(camera.scale, camera.scale, 1.0)
-  glTranslatef(camera.position.x, camera.position.y, 0.0)
+  glTranslatef(-camera.position.x, -camera.position.y, 0.0)
 
   glBegin(GL_QUADS)
   glTexCoord2i(0, 0)
@@ -164,8 +164,10 @@ proc main() =
   var camera = Camera(scale: 1.0)
   var mouse: Mouse
 
-
   while not quitting:
+    var wa: TXWindowAttributes
+    discard XGetWindowAttributes(display, win, addr wa)
+
     var xev: TXEvent
     while XPending(display) > 0:
       discard XNextEvent(display, addr xev)
@@ -178,8 +180,8 @@ proc main() =
                       xev.xmotion.y.float)
 
         if mouse.drag:
-          camera.position += camera.world(mouse.curr) - camera.world(mouse.prev)
-          camera.velocity = (mouse.curr - mouse.prev) * config.drag_velocity_factor
+          camera.position += camera.world(mouse.prev) - camera.world(mouse.curr)
+          camera.velocity = (mouse.prev - mouse.curr) * config.drag_velocity_factor
           mouse.prev = mouse.curr
 
       of ClientMessage:
@@ -226,6 +228,10 @@ proc main() =
         discard
 
     camera.update(config, 1.0 / config.fps.float, mouse)
+
+    camera.position.x = clamp(camera.position.x, 0, screenshot.width.float - wa.width.float * (1.0 / camera.scale))
+    camera.position.y = clamp(camera.position.y, 0, screenshot.height.float - wa.height.float * (1.0 / camera.scale))
+
     screenshot.display(camera)
 
     glXSwapBuffers(display, win)
