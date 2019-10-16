@@ -15,7 +15,7 @@ const defaultConfig* = Config(
   fps: 60
 )
 
-macro parseObject(obj: typed, key, val: string): typed =
+macro parseObject(obj: typed, key, val: string) =
   result = newNimNode(nnkCaseStmt).add(key)
   for c in obj.getType[2]:
     let a = case c.getType.typeKind
