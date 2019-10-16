@@ -1,4 +1,4 @@
-import x11/xlib, x11/x, x11/xutil
+import x11/xlib, x11/x
 
 type Image* = object
   width*, height*, bpp*: cint

@@ -1,5 +1,4 @@
 import os
-import math
 
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx
