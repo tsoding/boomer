@@ -24,7 +24,7 @@ proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse) =
     let wp0 = camera.world(mouse.curr)
     camera.scale = max(camera.scale + camera.delta_scale * dt, 1.0)
     let wp1 = camera.world(mouse.curr)
-    let dwp = wp1 - wp0
+    let dwp = wp0 - wp1
     camera.position += dwp
     camera.delta_scale -= sgn(camera.delta_scale).float * config.scale_friction * dt
 
