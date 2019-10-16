@@ -1,5 +1,4 @@
-import macros
-import strutils
+import macros, strutils
 
 type Config* = object
   scrollSpeed*: float
@@ -16,22 +15,30 @@ const defaultConfig* = Config(
   fps: 60
 )
 
+macro parseObject(obj: typed, key, val: string) =
+  result = newNimNode(nnkCaseStmt).add(key)
+  for c in obj.getType[2]:
+    let a = case c.getType.typeKind
+    of ntyFloat:
+      newCall("parseFloat", val)
+    of ntyInt:
+      newCall("parseInt", val)
+    of ntyString:
+      val
+    else:
+      error "Unsupported type: " & c.getType.`$`
+      val
+    result.add newNimNode(nnkOfBranch).add(
+      newLit $c,
+      newStmtList(quote do: `obj`.`c` = `a`)
+    )
+  result.add newNimNode(nnkElse).add(quote do:
+    raise newException(CatchableError, "Unknown config key " & `key`))
+
 proc loadConfig*(filePath: string): Config =
   result = defaultConfig
   for line in filePath.lines:
-    let pair = line.split('=')
+    let pair = line.split('=', 1)
     let key = pair[0].strip
     let value = pair[1].strip
-    case key
-    of "scroll_speed":
-      result.scroll_speed = value.parseFloat
-    of "drag_velocity_factor":
-      result.drag_velocity_factor = value.parseFloat
-    of "drag_friction":
-      result.drag_friction = value.parseFloat
-    of "scale_friction":
-      result.scale_friction = value.parseFloat
-    of "fps":
-      result.fps = value.parseInt
-    else:
-      raise newException(Exception, "Unknown config key " & key)
+    result.parseObject key, value
