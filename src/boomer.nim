@@ -59,6 +59,8 @@ proc main() =
 
   if existsFile configFile:
     config = loadConfig(configFile)
+  else:
+    stderr.writeLine configFile & " doesn't exist. Using default values. "
 
   echo "Using config: ", config
 
