@@ -228,9 +228,6 @@ proc main() =
 
     camera.update(config, 1.0 / config.fps.float, mouse)
 
-    camera.position.x = clamp(camera.position.x, 0, screenshot.width.float - wa.width.float * (1.0 / camera.scale))
-    camera.position.y = clamp(camera.position.y, 0, screenshot.height.float - wa.height.float * (1.0 / camera.scale))
-
     screenshot.display(camera)
 
     glXSwapBuffers(display, win)
