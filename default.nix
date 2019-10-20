@@ -1,5 +1,5 @@
 with import <nixpkgs> {}; let
-  nim_1_0 = callPackage ./overlay/nim_1_0.nim {};
+  nim_1_0 = callPackage ./overlay/nim_1_0.nix {};
 in rec {
   boomerEnv = stdenv.mkDerivation {
     name = "boomer-env";
