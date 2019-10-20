@@ -1,33 +1,28 @@
-import vec2
 import math
 import config
+import glm
 
 type Mouse* = object
-  curr*: Vec2
-  prev*: Vec2
+  curr*: Vec2f
+  prev*: Vec2f
   drag*: bool
 
 type Camera* = object
-  position*: Vec2
-  velocity*: Vec2
+  position*: Vec2f
+  velocity*: Vec2f
   scale*: float
-  delta_scale*: float
-
-proc world*(camera: Camera, v: Vec2): Vec2 =
-  (v - camera.position) / camera.scale
-
-proc screen*(camera: Camera, v: Vec2): Vec2 =
-  v * camera.scale + camera.position
+  deltaScale*: float
+  matrix*: Mat4f
 
 proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse) =
-  if abs(camera.delta_scale) > 0.5:
-    let wp0 = camera.world(mouse.curr)
-    camera.scale = max(camera.scale + camera.delta_scale * dt, 1.0)
-    let wp1 = camera.world(mouse.curr)
-    let dwp = wp0 - wp1
-    camera.position += dwp
-    camera.delta_scale -= sgn(camera.delta_scale).float * config.scale_friction * dt
+  if abs(camera.deltaScale) > 0.5:
+    camera.scale = max(camera.scale + camera.deltaScale * dt, 1.0)
+    if camera.scale > 1.0:
+      camera.position += mouse.curr * (camera.deltaScale / camera.scale * config.scalePanning)
+    camera.deltaScale -= sgn(camera.deltaScale).float * config.scaleFriction * dt
 
-  if not mouse.drag and (camera.velocity.len > 20.0):
+  if not mouse.drag and (camera.velocity.length > 0.01):
     camera.position += camera.velocity * dt
-    camera.velocity = camera.velocity - camera.velocity.norm * config.drag_friction * dt
+    camera.velocity -= camera.velocity.normalize * (config.dragFriction * dt)
+
+  camera.matrix = mat4f(1).translate(-camera.position.x, camera.position.y, 0).scale(camera.scale)
