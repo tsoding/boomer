@@ -114,10 +114,9 @@ proc main() =
   var wmName = "boomer"
   var wmClass = "Boomer"
   var hints = TXClassHint(res_name: wmName, res_class: wmClass)
-  var pHints: PXClassHint = addr(hints)
-
+  
   discard XStoreName(display, win, wmName)
-  discard XSetClassHint(display, win, pHints)
+  discard XSetClassHint(display, win, addr(hints))
 
   var wmDeleteMessage = XInternAtom(
     display, "WM_DELETE_WINDOW",
