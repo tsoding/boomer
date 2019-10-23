@@ -4,7 +4,7 @@ import navigation
 import image
 import config
 
-import x11/xlib, x11/x, x11/xutil
+import x11/xlib, x11/x, x11/xutil, x11/keysym
 import opengl, opengl/glx
 import la
 
@@ -261,15 +261,16 @@ proc main() =
           quitting = true
 
       of KeyPress:
-        case xev.xkey.keycode
-        of 19:
+        var key = XLookupKeysym(cast[PXKeyEvent](xev.addr), 0)
+        case key
+        of XK_0:
           camera.scale = 1.0
           camera.deltaScale = 0.0
           camera.position = vec2(0.0'f32, 0.0)
           camera.velocity = vec2(0.0'f32, 0.0)
-        of 24:
+        of XK_q, XK_Escape:
           quitting = true
-        of 27:
+        of XK_r:
           if configFile.len > 0 and existsFile(configFile):
             config = loadConfig(configFile)
         else:
