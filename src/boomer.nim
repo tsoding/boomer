@@ -13,7 +13,7 @@ const
   vertexShader = slurp "boomer.vs"
   fragmentShader = slurp "boomer.fs"
 
-proc newShader(shader: string, kind: GLenum): GLuint =
+proc newShader(shader: string, kind: GLenum, filePath: string): GLuint =
   result = glCreateShader(kind)
   var shaderArray = allocCStringArray([shader])
   glShaderSource(result, 1, shaderArray, nil)
@@ -25,14 +25,18 @@ proc newShader(shader: string, kind: GLenum): GLuint =
     glGetShaderiv(result, GL_COMPILE_STATUS, addr success)
     if not success.bool:
       glGetShaderInfoLog(result, 512, nil, infoLog)
+      echo "------------------------------"
+      echo "Error during compiling shader: ", filePath, ". Log:"
       echo infoLog
+      echo "------------------------------"
 
 proc newShaderProgram(vertex, fragment: string): GLuint =
   result = glCreateProgram()
 
+  # TODO: filename for shader compilation error reporting are hardcoded
   var
-    vertexShader = newShader(vertex, GL_VERTEX_SHADER)
-    fragmentShader = newShader(fragment, GL_FRAGMENT_SHADER)
+    vertexShader = newShader(vertex, GL_VERTEX_SHADER, "boomer.vs")
+    fragmentShader = newShader(fragment, GL_FRAGMENT_SHADER, "boomer.fs")
 
   glAttachShader(result, vertexShader)
   glAttachShader(result, fragmentShader)
