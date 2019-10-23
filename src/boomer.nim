@@ -110,7 +110,13 @@ proc main() =
     CWColormap or CWEventMask, addr swa)
 
   discard XMapWindow(display, win)
-  discard XStoreName(display, win, "Wordpress Application")
+
+  var wmName = "boomer"
+  var wmClass = "Boomer"
+  var hints = TXClassHint(res_name: wmName, res_class: wmClass)
+  
+  discard XStoreName(display, win, wmName)
+  discard XSetClassHint(display, win, addr(hints))
 
   var wmDeleteMessage = XInternAtom(
     display, "WM_DELETE_WINDOW",
