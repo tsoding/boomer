@@ -5,13 +5,15 @@ type Config* = object
   dragVelocityFactor*: float
   dragFriction*: float
   scaleFriction*: float
+  scalePanning*: float
   fps*: int
 
 const defaultConfig* = Config(
-  scroll_speed: 1.0,
-  drag_velocity_factor: 20.0,
-  drag_friction: 2000.0,
-  scale_friction: 5.0,
+  scrollSpeed: 1.0,
+  dragVelocityFactor: 10.0,
+  dragFriction: 1.0,
+  scaleFriction: 10.0,
+  scalePanning: 0.05,
   fps: 60
 )
 

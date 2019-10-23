@@ -1,46 +1,71 @@
 import os
 
-import x11/xlib, x11/x, x11/xutil
-import opengl, opengl/glx
-
-import vec2
 import navigation
 import image
 import config
 
-template checkError(context: string) =
-  let error = glGetError()
-  if error != 0.GLenum:
-    echo "GL error ", error.GLint, " ", context
+import x11/xlib, x11/x, x11/xutil
+import opengl, opengl/glx
+import la
 
-proc display(screenshot: Image, camera: Camera) =
-  glClearColor(0.0, 0.0, 0.0, 1.0)
+const
+  isDebug = not (defined(danger) or defined(release))
+  vertexShader = slurp "boomer.vs"
+  fragmentShader = slurp "boomer.fs"
+
+proc newShader(shader: string, kind: GLenum, filePath: string): GLuint =
+  result = glCreateShader(kind)
+  var shaderArray = allocCStringArray([shader])
+  glShaderSource(result, 1, shaderArray, nil)
+  glCompileShader(result)
+  deallocCStringArray(shaderArray)
+  when isDebug:
+    var success: GLint
+    var infoLog = newString(512).cstring
+    glGetShaderiv(result, GL_COMPILE_STATUS, addr success)
+    if not success.bool:
+      glGetShaderInfoLog(result, 512, nil, infoLog)
+      echo "------------------------------"
+      echo "Error during compiling shader: ", filePath, ". Log:"
+      echo infoLog
+      echo "------------------------------"
+
+proc newShaderProgram(vertex, fragment: string): GLuint =
+  result = glCreateProgram()
+
+  # TODO: filename for shader compilation error reporting are hardcoded
+  var
+    vertexShader = newShader(vertex, GL_VERTEX_SHADER, "boomer.vs")
+    fragmentShader = newShader(fragment, GL_FRAGMENT_SHADER, "boomer.fs")
+
+  glAttachShader(result, vertexShader)
+  glAttachShader(result, fragmentShader)
+
+  glLinkProgram(result)
+
+  glDeleteShader(vertexShader)
+  glDeleteShader(fragmentShader)
+
+  when isDebug:
+    var success: GLint
+    var infoLog = newString(512).cstring
+    glGetProgramiv(result, GL_LINK_STATUS, addr success)
+    if not success.bool:
+      glGetProgramInfoLog(result, 512, nil, infoLog)
+      echo infoLog
+
+  glUseProgram(result)
+
+proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint) =
+  glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-  glPushMatrix()
+  glUseProgram(shader)
 
-  glScalef(camera.scale, camera.scale, 1.0)
-  glTranslatef(-camera.position.x, -camera.position.y, 0.0)
+  glUniformMatrix4fv(glGetUniformLocation(shader, "transform".cstring), 1, false, camera.matrix.caddr)
 
-  glBegin(GL_QUADS)
-  glTexCoord2i(0, 0)
-  glVertex2f(0.0, 0.0)
-
-  glTexCoord2i(1, 0)
-  glVertex2f(screenshot.width.float, 0.0)
-
-  glTexCoord2i(1, 1)
-  glVertex2f(screenshot.width.float, screenshot.height.float)
-
-  glTexCoord2i(0, 1)
-  glVertex2f(0.0, screenshot.height.float)
-  glEnd()
-  checkError("rasterizing the quadrangle")
-
-  glFlush()
-  checkError("flush")
-
-  glPopMatrix()
+  glBindVertexArray(vao)
+  glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
 
 # TODO(#29): get rid of custom X11 button constants
 const
@@ -63,6 +88,8 @@ proc main() =
 
   echo "Using config: ", config
 
+  # Fetching pixel data from X
+
   var display = XOpenDisplay(nil)
   if display == nil:
     quit "Failed to open display"
@@ -75,21 +102,21 @@ proc main() =
   assert screenshot.bpp == 32
 
   let screen = XDefaultScreen(display)
-  var glxMajor : int
-  var glxMinor : int
+  var glxMajor, glxMinor: int
 
   if (not glXQueryVersion(display, glxMajor, glxMinor) or
       (glxMajor == 1 and glxMinor < 3) or
       (glxMajor < 1)):
     quit "Invalid GLX version. Expected >=1.3"
   echo("GLX version ", glxMajor, ".", glxMinor)
-  echo("GLX extension: ", $glXQueryExtensionsString(display, screen))
+  echo("GLX extension: ", glXQueryExtensionsString(display, screen))
 
   var attrs = [
     GLX_RGBA,
     GLX_DEPTH_SIZE, 24,
     GLX_DOUBLEBUFFER,
-    None]
+    None
+  ]
 
   var vi = glXChooseVisual(display, 0, addr attrs[0])
   if vi == nil:
@@ -130,12 +157,50 @@ proc main() =
 
   loadExtensions()
 
-  var textures: GLuint = 0
-  glGenTextures(1, addr textures)
-  checkError("making texture")
+  var shaderProgram = newShaderProgram(vertexShader, fragmentShader)
 
-  glBindTexture(GL_TEXTURE_2D, textures)
-  checkError("binding texture")
+  var
+    vao, vbo, ebo: GLuint
+    vertices = [
+      # Position                 Texture coords
+      [GLfloat  1.0,  -1.0, 0.0, 1.0, 1.0], # Top right
+      [GLfloat  1.0,  1.0,  0.0, 1.0, 0.0], # Bottom right
+      [GLfloat -1.0,  1.0,  0.0, 0.0, 0.0], # Bottom left
+      [GLfloat -1.0,  -1.0, 0.0, 0.0, 1.0]  # Top left
+    ]
+    indices = [GLuint(0), 1, 3,
+                      1,  2, 3]
+
+  glGenVertexArrays(1, addr vao)
+  glGenBuffers(1, addr vbo)
+  glGenBuffers(1, addr ebo)
+  defer:
+    glDeleteVertexArrays(1, addr vao)
+    glDeleteBuffers(1, addr vbo)
+    glDeleteBuffers(1, addr ebo)
+
+  glBindVertexArray(vao)
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo)
+  glBufferData(GL_ARRAY_BUFFER, size = GLsizeiptr(sizeof(vertices)),
+               addr vertices, GL_STATIC_DRAW)
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, size = GLsizeiptr(sizeof(indices)),
+               addr indices, GL_STATIC_DRAW);
+
+  var stride = GLsizei(vertices[0].len * sizeof(GLfloat))
+
+  glVertexAttribPointer(0, 3, cGL_FLOAT, false, stride, cast[pointer](0))
+  glEnableVertexAttribArray(0)
+
+  glVertexAttribPointer(1, 2, cGL_FLOAT, false, stride, cast[pointer](3 * sizeof(GLfloat)))
+  glEnableVertexAttribArray(1)
+
+  var texture = 0.GLuint
+  glGenTextures(1, addr texture)
+  glActiveTexture(GL_TEXTURE0)
+  glBindTexture(GL_TEXTURE_2D, texture)
 
   glTexImage2D(GL_TEXTURE_2D,
                0,
@@ -147,27 +212,28 @@ proc main() =
                GL_BGRA,
                GL_UNSIGNED_BYTE,
                screenshot.pixels)
-  checkError("loading texture")
+  glGenerateMipmap(GL_TEXTURE_2D)
+
+  glUniform1i(glGetUniformLocation(shaderProgram, "tex".cstring), 0)
+
 
   glEnable(GL_TEXTURE_2D)
 
   glOrtho(0.0, screenshot.width.float,
           screenshot.height.float, 0.0,
           -1.0, 1.0)
-  checkError("setting transforms")
 
-  glTexParameteri(GL_TEXTURE_2D,
-                  GL_TEXTURE_MIN_FILTER,
-                  GL_NEAREST)
-  glTexParameteri(GL_TEXTURE_2D,
-                  GL_TEXTURE_MAG_FILTER,
-                  GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
 
   glViewport(0, 0, screenshot.width, screenshot.height)
 
-  var quitting = false
-  var camera = Camera(scale: 1.0)
-  var mouse: Mouse
+  var
+    quitting = false
+    camera = Camera(scale: 1.0, matrix: mat4f(1))
+    mouse: Mouse
 
   while not quitting:
     var wa: TXWindowAttributes
@@ -181,12 +247,13 @@ proc main() =
         discard
 
       of MotionNotify:
-        mouse.curr = (xev.xmotion.x.float,
-                      xev.xmotion.y.float)
+        mouse.curr = vec2(xev.xmotion.x.float32 / screenshot.width.float32 * 2.0'f32 - 1.0'f32,
+                          xev.xmotion.y.float32 / screenshot.height.float32 * 2.0'f32 - 1.0'f32)
 
         if mouse.drag:
-          camera.position += camera.world(mouse.prev) - camera.world(mouse.curr)
-          camera.velocity = (mouse.prev - mouse.curr) * config.drag_velocity_factor
+          let mouseDelta = mouse.prev - mouse.curr
+          camera.position += mouseDelta
+          camera.velocity = mouseDelta * config.dragVelocityFactor
           mouse.prev = mouse.curr
 
       of ClientMessage:
@@ -197,13 +264,13 @@ proc main() =
         case xev.xkey.keycode
         of 19:
           camera.scale = 1.0
-          camera.delta_scale = 0.0
-          camera.position = (0.0, 0.0)
-          camera.velocity = (0.0, 0.0)
+          camera.deltaScale = 0.0
+          camera.position = vec2(0.0'f32, 0.0)
+          camera.velocity = vec2(0.0'f32, 0.0)
         of 24:
           quitting = true
         of 27:
-          if configFile.len > 0:
+          if configFile.len > 0 and existsFile(configFile):
             config = loadConfig(configFile)
         else:
           discard
@@ -215,10 +282,10 @@ proc main() =
           mouse.drag = true
 
         of WHEEL_UP:
-          camera.delta_scale += config.scroll_speed
+          camera.deltaScale += config.scrollSpeed
 
         of WHEEL_DOWN:
-          camera.delta_scale -= config.scroll_speed
+          camera.deltaScale -= config.scrollSpeed
 
         else:
           discard
@@ -234,10 +301,8 @@ proc main() =
 
     camera.update(config, 1.0 / config.fps.float, mouse)
 
-    screenshot.display(camera)
+    screenshot.draw(camera, shaderProgram, vao, texture)
 
     glXSwapBuffers(display, win)
-
-  # saveToPPM("screenshot.ppm", image)
 
 main()
