@@ -1,6 +1,6 @@
-#version 330 core
-out vec4 color;
-in vec2 texcoord;
+#version 130
+out mediump vec4 color;
+in mediump vec2 texcoord;
 uniform sampler2D tex;
 void main()
 {
