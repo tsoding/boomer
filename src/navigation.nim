@@ -1,6 +1,6 @@
 import math
 import config
-import glm
+import la
 
 type Mouse* = object
   curr*: Vec2f

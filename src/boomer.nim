@@ -6,7 +6,7 @@ import config
 
 import x11/xlib, x11/x, x11/xutil
 import opengl, opengl/glx
-import glm
+import la
 
 const
   isDebug = not (defined(danger) or defined(release))
