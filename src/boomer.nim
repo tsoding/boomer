@@ -20,8 +20,8 @@ proc readShader(file: string): Shader =
 
 const
   isDebug = not (defined(danger) or defined(release))
-  vertexShader = readShader "boomer.vs"
-  fragmentShader = readShader "boomer.fs"
+  defaultVertexShader = readShader "boomer.vs"
+  defaultFragmentShader = readShader "boomer.fs"
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
@@ -78,18 +78,38 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint) =
 
 proc main() =
   var config = defaultConfig
-  let configFile = block:
-    if paramCount() > 0:
-      paramStr(1)
-    else:
-      getConfigDir() / "boomer" / "config"
+  let
+    boomerDir = getConfigDir() / "boomer"
+    configFile = block:
+      if paramCount() > 0:
+        paramStr(1)
+      else:
+        boomerDir / "config"
 
   if existsFile configFile:
     config = loadConfig(configFile)
   else:
     stderr.writeLine configFile & " doesn't exist. Using default values. "
 
+  if config.vertexShader.len == 0:
+    config.vertexShader = boomerDir / "shader.vs"
+
+  if config.fragmentShader.len == 0:
+    config.fragmentShader = boomerDir / "shader.fs"
+
   echo "Using config: ", config
+
+  var vertexShader = block:
+    if config.vertexShader != "default" and existsFile config.vertexShader:
+      readShader config.vertexShader
+    else:
+      defaultVertexShader
+
+  var fragmentShader = block:
+    if config.fragmentShader != "default" and existsFile config.fragmentShader:
+      readShader config.fragmentShader
+    else:
+      defaultFragmentShader
 
   # Fetching pixel data from X
 
