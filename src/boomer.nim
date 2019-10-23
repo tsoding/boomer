@@ -33,7 +33,7 @@ proc newShader(shader: string, kind: GLenum, filePath: string): GLuint =
 proc newShaderProgram(vertex, fragment: string): GLuint =
   result = glCreateProgram()
 
-  # TODO: filename for shader compilation error reporting are hardcoded
+  # TODO(#41): filename for shader compilation error reporting are hardcoded
   var
     vertexShader = newShader(vertex, GL_VERTEX_SHADER, "boomer.vs")
     fragmentShader = newShader(fragment, GL_FRAGMENT_SHADER, "boomer.fs")
