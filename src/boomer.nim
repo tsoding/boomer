@@ -8,14 +8,24 @@ import x11/xlib, x11/x, x11/xutil, x11/keysym
 import opengl, opengl/glx
 import la
 
+type Shader = tuple[path, content: string]
+
+proc readShader(file: string): Shader =
+  result.path = file
+  result.content = block:
+    when nimvm:
+      slurp file
+    else:
+      readFile file
+
 const
   isDebug = not (defined(danger) or defined(release))
-  vertexShader = slurp "boomer.vs"
-  fragmentShader = slurp "boomer.fs"
+  vertexShader = readShader "boomer.vs"
+  fragmentShader = readShader "boomer.fs"
 
-proc newShader(shader: string, kind: GLenum, filePath: string): GLuint =
+proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
-  var shaderArray = allocCStringArray([shader])
+  var shaderArray = allocCStringArray([shader.content])
   glShaderSource(result, 1, shaderArray, nil)
   glCompileShader(result)
   deallocCStringArray(shaderArray)
@@ -26,17 +36,16 @@ proc newShader(shader: string, kind: GLenum, filePath: string): GLuint =
     if not success.bool:
       glGetShaderInfoLog(result, 512, nil, infoLog)
       echo "------------------------------"
-      echo "Error during compiling shader: ", filePath, ". Log:"
+      echo "Error during shader compilation: ", shader.path, ". Log:"
       echo infoLog
       echo "------------------------------"
 
-proc newShaderProgram(vertex, fragment: string): GLuint =
+proc newShaderProgram(vertex, fragment: Shader): GLuint =
   result = glCreateProgram()
 
-  # TODO(#41): filename for shader compilation error reporting are hardcoded
   var
-    vertexShader = newShader(vertex, GL_VERTEX_SHADER, "boomer.vs")
-    fragmentShader = newShader(fragment, GL_FRAGMENT_SHADER, "boomer.fs")
+    vertexShader = newShader(vertex, GL_VERTEX_SHADER)
+    fragmentShader = newShader(fragment, GL_FRAGMENT_SHADER)
 
   glAttachShader(result, vertexShader)
   glAttachShader(result, fragmentShader)
