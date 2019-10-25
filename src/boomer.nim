@@ -76,12 +76,6 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint) =
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
 
-# TODO(#29): get rid of custom X11 button constants
-const
-  LEFT_BUTTON = 1
-  WHEEL_UP = 4
-  WHEEL_DOWN = 5
-
 proc main() =
   var config = defaultConfig
   let configFile = block:
@@ -287,14 +281,14 @@ proc main() =
 
       of ButtonPress:
         case xev.xbutton.button
-        of LEFT_BUTTON:
+        of Button1:
           mouse.prev = mouse.curr
           mouse.drag = true
 
-        of WHEEL_UP:
+        of Button4:
           camera.deltaScale += config.scrollSpeed
 
-        of WHEEL_DOWN:
+        of Button5:
           camera.deltaScale -= config.scrollSpeed
 
         else:
@@ -302,7 +296,7 @@ proc main() =
 
       of ButtonRelease:
         case xev.xbutton.button
-        of LEFT_BUTTON:
+        of Button1:
           mouse.drag = false
         else:
           discard
