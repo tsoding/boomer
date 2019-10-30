@@ -20,8 +20,8 @@ proc readShader(file: string): Shader =
 
 const
   isDebug = not (defined(danger) or defined(release))
-  defaultVertexShader = readShader "boomer.vs"
-  defaultFragmentShader = readShader "boomer.fs"
+  defaultVertexShader = readShader "vert.glsl"
+  defaultFragmentShader = readShader "frag.glsl"
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
@@ -89,8 +89,8 @@ proc main() =
 
   echo "Using config: ", config
 
-  let customVertexShaderPath = boomerDir / "boomer.vs"
-  let customFragmentShaderPath = boomerDir / "boomer.fs"
+  let customVertexShaderPath = boomerDir / "vert.glsl"
+  let customFragmentShaderPath = boomerDir / "frag.glsl"
 
   var vertexShader: Shader = block:
     if existsFile customVertexShaderPath:
