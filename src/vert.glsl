@@ -2,9 +2,10 @@
 in vec3 aPos;
 in vec2 aTexCoord;
 out vec2 texcoord;
-uniform mat4 transform;
+uniform vec2 cameraPos;
+uniform float cameraScale;
 void main()
 {
-	gl_Position = transform * vec4(aPos, 1.0f);
+	gl_Position = vec4((aPos.x - cameraPos.x) * cameraScale, (aPos.y + cameraPos.y) * cameraScale, 0.0, 1.0);
 	texcoord = aTexCoord;
 }

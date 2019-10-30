@@ -71,7 +71,8 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint) =
 
   glUseProgram(shader)
 
-  glUniformMatrix4fv(glGetUniformLocation(shader, "transform".cstring), 1, false, camera.matrix.caddr)
+  glUniform2f(glGetUniformLocation(shader, "cameraPos".cstring), camera.position[0], camera.position[1])
+  glUniform1f(glGetUniformLocation(shader, "cameraScale".cstring), camera.scale)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -248,7 +249,7 @@ proc main() =
 
   var
     quitting = false
-    camera = Camera(scale: 1.0, matrix: mat4f(1))
+    camera = Camera(scale: 1.0)
     mouse: Mouse
 
   while not quitting:
@@ -263,13 +264,13 @@ proc main() =
         discard
 
       of MotionNotify:
-        mouse.curr = vec2(xev.xmotion.x.float32 / screenshot.width.float32 * 2.0'f32 - 1.0'f32,
-                          xev.xmotion.y.float32 / screenshot.height.float32 * 2.0'f32 - 1.0'f32)
+        mouse.curr = vec2(xev.xmotion.x.float32,
+                          xev.xmotion.y.float32)
 
         if mouse.drag:
-          let mouseDelta = mouse.prev - mouse.curr
-          camera.position += mouseDelta
-          camera.velocity = mouseDelta * config.dragVelocityFactor
+          let delta = world(mouse.prev, screenshot, camera) - world(mouse.curr, screenshot, camera)
+          camera.position += delta
+          camera.velocity = delta * config.dragVelocityFactor
           mouse.prev = mouse.curr
 
       of ClientMessage:
@@ -316,7 +317,7 @@ proc main() =
       else:
         discard
 
-    camera.update(config, 1.0 / config.fps.float, mouse)
+    camera.update(config, 1.0 / config.fps.float, mouse, screenshot)
 
     screenshot.draw(camera, shaderProgram, vao, texture)
 

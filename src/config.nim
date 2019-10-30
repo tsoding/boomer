@@ -5,7 +5,6 @@ type Config* = object
   dragVelocityFactor*: float
   dragFriction*: float
   scaleFriction*: float
-  scalePanning*: float
   fps*: int
 
 const defaultConfig* = Config(
@@ -13,7 +12,6 @@ const defaultConfig* = Config(
   dragVelocityFactor: 10.0,
   dragFriction: 1.0,
   scaleFriction: 10.0,
-  scalePanning: 0.05,
   fps: 60
 )
 
