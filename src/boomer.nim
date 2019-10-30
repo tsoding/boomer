@@ -20,8 +20,8 @@ proc readShader(file: string): Shader =
 
 const
   isDebug = not (defined(danger) or defined(release))
-  vertexShader = readShader "boomer.vs"
-  fragmentShader = readShader "boomer.fs"
+  defaultVertexShader = readShader "vert.glsl"
+  defaultFragmentShader = readShader "frag.glsl"
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
@@ -78,11 +78,9 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint) =
 
 proc main() =
   var config = defaultConfig
-  let configFile = block:
-    if paramCount() > 0:
-      paramStr(1)
-    else:
-      getConfigDir() / "boomer" / "config"
+  let
+    boomerDir = getConfigDir() / "boomer"
+    configFile = boomerDir / "config"
 
   if existsFile configFile:
     config = loadConfig(configFile)
@@ -90,6 +88,21 @@ proc main() =
     stderr.writeLine configFile & " doesn't exist. Using default values. "
 
   echo "Using config: ", config
+
+  let customVertexShaderPath = boomerDir / "vert.glsl"
+  let customFragmentShaderPath = boomerDir / "frag.glsl"
+
+  var vertexShader: Shader = block:
+    if existsFile customVertexShaderPath:
+      readShader customVertexShaderPath
+    else:
+      defaultVertexShader
+
+  var fragmentShader = block:
+    if existsFile customFragmentShaderPath:
+      readShader customFragmentShaderPath
+    else:
+      defaultFragmentShader
 
   # Fetching pixel data from X
 
@@ -144,7 +157,7 @@ proc main() =
   var wmName = "boomer"
   var wmClass = "Boomer"
   var hints = TXClassHint(res_name: wmName, res_class: wmClass)
-  
+
   discard XStoreName(display, win, wmName)
   discard XSetClassHint(display, win, addr(hints))
 
