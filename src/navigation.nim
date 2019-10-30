@@ -23,7 +23,7 @@ proc world*(point: Vec2f, image: Image, camera: Camera): Vec2f =
 
 proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image: Image) =
   if abs(camera.deltaScale) > 0.5:
-    # TODO: camera position adjustment doesn't work anymore
+    # TODO(#48): camera position adjustment doesn't work anymore
     camera.scale = max(camera.scale + camera.delta_scale * dt, 1.0)
     camera.delta_scale -= sgn(camera.delta_scale).float * config.scale_friction * dt
 
