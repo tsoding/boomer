@@ -7,8 +7,6 @@ type Config* = object
   scaleFriction*: float
   scalePanning*: float
   fps*: int
-  vertexShader*: string
-  fragmentShader*: string
 
 const defaultConfig* = Config(
   scrollSpeed: 1.0,

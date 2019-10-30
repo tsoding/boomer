@@ -80,34 +80,27 @@ proc main() =
   var config = defaultConfig
   let
     boomerDir = getConfigDir() / "boomer"
-    configFile = block:
-      if paramCount() > 0:
-        paramStr(1)
-      else:
-        boomerDir / "config"
+    configFile = boomerDir / "config"
 
   if existsFile configFile:
     config = loadConfig(configFile)
   else:
     stderr.writeLine configFile & " doesn't exist. Using default values. "
 
-  if config.vertexShader.len == 0:
-    config.vertexShader = boomerDir / "shader.vs"
-
-  if config.fragmentShader.len == 0:
-    config.fragmentShader = boomerDir / "shader.fs"
-
   echo "Using config: ", config
 
-  var vertexShader = block:
-    if config.vertexShader != "default" and existsFile config.vertexShader:
-      readShader config.vertexShader
+  let customVertexShaderPath = boomerDir / "boomer.vs"
+  let customFragmentShaderPath = boomerDir / "boomer.fs"
+
+  var vertexShader: Shader = block:
+    if existsFile customVertexShaderPath:
+      readShader customVertexShaderPath
     else:
       defaultVertexShader
 
   var fragmentShader = block:
-    if config.fragmentShader != "default" and existsFile config.fragmentShader:
-      readShader config.fragmentShader
+    if existsFile customFragmentShaderPath:
+      readShader customFragmentShaderPath
     else:
       defaultFragmentShader
 
@@ -164,7 +157,7 @@ proc main() =
   var wmName = "boomer"
   var wmClass = "Boomer"
   var hints = TXClassHint(res_name: wmName, res_class: wmClass)
-  
+
   discard XStoreName(display, win, wmName)
   discard XSetClassHint(display, win, addr(hints))
 
