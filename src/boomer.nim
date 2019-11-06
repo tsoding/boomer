@@ -66,7 +66,7 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
   glUseProgram(result)
 
 proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
-          windowSize: Vec2f) =
+          windowSize: Vec2f, mouse: Mouse) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -80,6 +80,9 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
   glUniform2f(glGetUniformLocation(shader, "windowSize".cstring),
               windowSize.x.float32,
               windowSize.y.float32)
+  glUniform2f(glGetUniformLocation(shader, "cursorPos".cstring),
+              mouse.curr.x.float32,
+              mouse.curr.y.float32)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -183,14 +186,16 @@ proc main() =
 
   var shaderProgram = newShaderProgram(vertexShader, fragmentShader)
 
+  let w = screenshot.width.float32
+  let h = screenshot.height.float32
   var
     vao, vbo, ebo: GLuint
     vertices = [
       # Position                 Texture coords
-      [GLfloat  1.0,  -1.0, 0.0, 1.0, 1.0], # Top right
-      [GLfloat  1.0,  1.0,  0.0, 1.0, 0.0], # Bottom right
-      [GLfloat -1.0,  1.0,  0.0, 0.0, 0.0], # Bottom left
-      [GLfloat -1.0,  -1.0, 0.0, 0.0, 1.0]  # Top left
+      [GLfloat    w,     0, 0.0, 1.0, 1.0], # Top right
+      [GLfloat    w,     h, 0.0, 1.0, 0.0], # Bottom right
+      [GLfloat    0,     h, 0.0, 0.0, 0.0], # Bottom left
+      [GLfloat    0,     0, 0.0, 0.0, 1.0]  # Top left
     ]
     indices = [GLuint(0), 1, 3,
                       1,  2, 3]
@@ -240,7 +245,6 @@ proc main() =
 
   glUniform1i(glGetUniformLocation(shaderProgram, "tex".cstring), 0)
 
-
   glEnable(GL_TEXTURE_2D)
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -270,10 +274,11 @@ proc main() =
                           xev.xmotion.y.float32)
 
         if mouse.drag:
-          let delta = world(mouse.prev, screenshot, camera) - world(mouse.curr, screenshot, camera)
+          let delta = world(camera, mouse.prev) - world(camera, mouse.curr)
           camera.position += delta
           camera.velocity = delta * config.dragVelocityFactor
-          mouse.prev = mouse.curr
+
+        mouse.prev = mouse.curr
 
       of ClientMessage:
         if cast[TAtom](xev.xclient.data.l[0]) == wmDeleteMessage:
@@ -322,7 +327,8 @@ proc main() =
     camera.update(config, 1.0 / config.fps.float, mouse, screenshot)
 
     screenshot.draw(camera, shaderProgram, vao, texture,
-                    vec2(wa.width.float32, wa.height.float32))
+                    vec2(wa.width.float32, wa.height.float32),
+                    mouse)
 
     glXSwapBuffers(display, win)
 

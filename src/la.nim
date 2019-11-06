@@ -7,6 +7,9 @@ proc vec2*(x: float32, y: float32): Vec2f = (x, y)
 proc `*`*(a: Vec2f, s: float32): Vec2f =
   vec2(a.x * s, a.y * s)
 
+proc `/`*(a: Vec2f, s: float32): Vec2f =
+  vec2(a.x / s, a.y / s)
+
 proc `*`*(a: Vec2f, b: Vec2f): Vec2f =
   vec2(a.x * b.x, a.y * b.y)
 

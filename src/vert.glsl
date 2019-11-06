@@ -2,19 +2,24 @@
 in vec3 aPos;
 in vec2 aTexCoord;
 out vec2 texcoord;
+
 uniform vec2 cameraPos;
 uniform float cameraScale;
 uniform vec2 windowSize;
 uniform vec2 screenshotSize;
+uniform vec2 cursorPos;
 
-vec2 ratio = vec2(
-    windowSize.x / screenshotSize.x,
-    windowSize.y / screenshotSize.y);
+vec3 to_world(vec3 v) {
+    vec2 ratio = vec2(
+        windowSize.x / screenshotSize.x,
+        windowSize.y / screenshotSize.y);
+    return vec3((v.x / screenshotSize.x * 2.0 - 1.0) / ratio.x,
+                (v.y / screenshotSize.y * 2.0 - 1.0) / ratio.y,
+                v.z);
+}
 
 void main()
 {
-	gl_Position = vec4((aPos.x - cameraPos.x) * cameraScale / ratio.x,
-                       (aPos.y + cameraPos.y) * cameraScale / ratio.y,
-                       0.0, 1.0);
+	gl_Position = vec4(to_world((aPos - vec3(cameraPos * vec2(1.0, -1.0), 0.0)) * cameraScale), 1.0);
 	texcoord = aTexCoord;
 }
