@@ -65,7 +65,8 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
 
   glUseProgram(result)
 
-proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint) =
+proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
+          aspectRatio: Vec2f) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -73,6 +74,7 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint) =
 
   glUniform2f(glGetUniformLocation(shader, "cameraPos".cstring), camera.position[0], camera.position[1])
   glUniform1f(glGetUniformLocation(shader, "cameraScale".cstring), camera.scale)
+  glUniform2f(glGetUniformLocation(shader, "aspectRatio".cstring), aspectRatio.x, aspectRatio.y)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -241,8 +243,6 @@ proc main() =
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
 
-  glViewport(0, 0, screenshot.width, screenshot.height)
-
   var
     quitting = false
     camera = Camera(scale: 1.0)
@@ -251,6 +251,7 @@ proc main() =
   while not quitting:
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
+    glViewport(0, 0, wa.width, wa.height)
 
     var xev: TXEvent
     while XPending(display) > 0:
@@ -315,7 +316,9 @@ proc main() =
 
     camera.update(config, 1.0 / config.fps.float, mouse, screenshot)
 
-    screenshot.draw(camera, shaderProgram, vao, texture)
+    screenshot.draw(camera, shaderProgram, vao, texture,
+                    vec2(wa.width.float32 / screenshot.width.float32,
+                         wa.height.float32 / screenshot.height.float32))
 
     glXSwapBuffers(display, win)
 
