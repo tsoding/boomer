@@ -3,6 +3,8 @@ import config
 import la
 import image
 
+const VELOCITY_THRESHOLD = 10.0
+
 type Mouse* = object
   curr*: Vec2f
   prev*: Vec2f
@@ -23,6 +25,6 @@ proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image:
     camera.scale = max(camera.scale + camera.delta_scale * dt, 1.0)
     camera.delta_scale -= sgn(camera.delta_scale).float * config.scale_friction * dt
 
-  if not mouse.drag and (camera.velocity.length > 0.01):
+  if not mouse.drag and (camera.velocity.length > VELOCITY_THRESHOLD):
     camera.position += camera.velocity * dt
     camera.velocity -= camera.velocity.normalize * (config.dragFriction * dt)
