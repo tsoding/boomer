@@ -311,7 +311,7 @@ proc main() =
             config = loadConfig(configFile)
 
           if (xev.xkey.state and ControlMask) > 0.uint32:
-            # TODO: Custom shader file reading and compilation errors crash the whole application
+            # TODO(#53): Custom shader file reading and compilation errors crash the whole application
             echo "------------------------------"
             echo "RELOADING SHADERS"
             glDeleteProgram(shaderProgram)
