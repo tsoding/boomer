@@ -31,6 +31,9 @@ const
 proc reloadShader(shader: var Shader) =
   if not shader.baked:
     shader.content = readFile shader.path
+  else:
+    when isDebug:
+      shader.content = readFile ("src" / shader.path)
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
