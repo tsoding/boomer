@@ -8,7 +8,7 @@ import x11/xlib, x11/x, x11/xutil, x11/keysym
 import opengl, opengl/glx
 import la
 
-type Shader = tuple[path, content: string]
+type Shader = tuple[path, content: string, baked: bool]
 
 proc readShader(file: string): Shader =
   result.path = file
@@ -17,11 +17,23 @@ proc readShader(file: string): Shader =
       slurp file
     else:
       readFile file
+  result.baked = block:
+    when nimvm:
+      true
+    else:
+      false
 
 const
   isDebug = not (defined(danger) or defined(release))
   defaultVertexShader = readShader "vert.glsl"
   defaultFragmentShader = readShader "frag.glsl"
+
+proc reloadShader(shader: var Shader) =
+  if not shader.baked:
+    shader.content = readFile shader.path
+  else:
+    when isDebug:
+      shader.content = readFile ("src" / shader.path)
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
@@ -297,6 +309,17 @@ proc main() =
         of XK_r:
           if configFile.len > 0 and existsFile(configFile):
             config = loadConfig(configFile)
+
+          if (xev.xkey.state and ControlMask) > 0.uint32:
+            # TODO(#53): Custom shader file reading and compilation errors crash the whole application
+            echo "------------------------------"
+            echo "RELOADING SHADERS"
+            glDeleteProgram(shaderProgram)
+            reloadShader(vertexShader)
+            reloadShader(fragmentShader)
+            shaderProgram = newShaderProgram(vertexShader, fragmentShader)
+            echo "Shader program ID: ", shaderProgram
+            echo "------------------------------"
         else:
           discard
 
