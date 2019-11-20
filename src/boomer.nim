@@ -8,32 +8,30 @@ import x11/xlib, x11/x, x11/xutil, x11/keysym
 import opengl, opengl/glx
 import la
 
-type Shader = tuple[path, content: string, baked: bool]
+type Shader = tuple[path, content: string]
 
 proc readShader(file: string): Shader =
-  result.path = file
-  result.content = block:
-    when nimvm:
-      slurp file
-    else:
-      readFile file
-  result.baked = block:
-    when nimvm:
-      true
-    else:
-      false
+  when nimvm:
+    result.path = file
+    result.content = slurp result.path
+  else:
+    result.path = "src" / file
+    result.content = readFile result.path
 
 const
   isDebug = not (defined(danger) or defined(release))
-  defaultVertexShader = readShader "vert.glsl"
-  defaultFragmentShader = readShader "frag.glsl"
+
+when isDebug:
+  var
+    vertexShader = readShader "vert.glsl"
+    fragmentShader = readShader "frag.glsl"
+else:
+  const
+    vertexShader = readShader "vert.glsl"
+    fragmentShader = readShader "frag.glsl"
 
 proc reloadShader(shader: var Shader) =
-  if not shader.baked:
-    shader.content = readFile shader.path
-  else:
-    when isDebug:
-      shader.content = readFile ("src" / shader.path)
+  shader.content = readFile shader.path
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
@@ -116,18 +114,6 @@ proc main() =
 
   let customVertexShaderPath = boomerDir / "vert.glsl"
   let customFragmentShaderPath = boomerDir / "frag.glsl"
-
-  var vertexShader: Shader = block:
-    if existsFile customVertexShaderPath:
-      readShader customVertexShaderPath
-    else:
-      defaultVertexShader
-
-  var fragmentShader = block:
-    if existsFile customFragmentShaderPath:
-      readShader customFragmentShaderPath
-    else:
-      defaultFragmentShader
 
   # Fetching pixel data from X
 
@@ -315,16 +301,17 @@ proc main() =
           if configFile.len > 0 and existsFile(configFile):
             config = loadConfig(configFile)
 
-          if (xev.xkey.state and ControlMask) > 0.uint32:
-            # TODO(#53): Custom shader file reading and compilation errors crash the whole application
-            echo "------------------------------"
-            echo "RELOADING SHADERS"
-            glDeleteProgram(shaderProgram)
-            reloadShader(vertexShader)
-            reloadShader(fragmentShader)
-            shaderProgram = newShaderProgram(vertexShader, fragmentShader)
-            echo "Shader program ID: ", shaderProgram
-            echo "------------------------------"
+          when isDebug:
+            if (xev.xkey.state and ControlMask) > 0.uint32:
+              # TODO(#53): Custom shader file reading and compilation errors crash the whole application
+              echo "------------------------------"
+              echo "RELOADING SHADERS"
+              glDeleteProgram(shaderProgram)
+              reloadShader(vertexShader)
+              reloadShader(fragmentShader)
+              shaderProgram = newShaderProgram(vertexShader, fragmentShader)
+              echo "Shader program ID: ", shaderProgram
+              echo "------------------------------"
 
         of XK_f:
           flashlight = not flashlight
