@@ -78,7 +78,7 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
   glUseProgram(result)
 
 proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
-          windowSize: Vec2f, mouse: Mouse) =
+          windowSize: Vec2f, mouse: Mouse, flShadow: float32, flRadius: float32) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -95,6 +95,8 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
   glUniform2f(glGetUniformLocation(shader, "cursorPos".cstring),
               mouse.curr.x.float32,
               mouse.curr.y.float32)
+  glUniform1f(glGetUniformLocation(shader, "flShadow".cstring), flShadow)
+  glUniform1f(glGetUniformLocation(shader, "flRadius".cstring), flRadius)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -268,6 +270,9 @@ proc main() =
     quitting = false
     camera = Camera(scale: 1.0)
     mouse: Mouse
+    flashlight = false
+    f = 0.0
+    flRadius = 200.0
 
   while not quitting:
     var wa: TXWindowAttributes
@@ -320,6 +325,9 @@ proc main() =
             shaderProgram = newShaderProgram(vertexShader, fragmentShader)
             echo "Shader program ID: ", shaderProgram
             echo "------------------------------"
+
+        of XK_f:
+          flashlight = not flashlight
         else:
           discard
 
@@ -330,10 +338,17 @@ proc main() =
           mouse.drag = true
 
         of Button4:
-          camera.deltaScale += config.scrollSpeed
+          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
+            # TODO(#57): changing flashlight radius should be animated
+            flRadius += 10.0
+          else:
+            camera.deltaScale += config.scrollSpeed
 
         of Button5:
-          camera.deltaScale -= config.scrollSpeed
+          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
+            flRadius = max(flRadius - 10.0, 0.0)
+          else:
+            camera.deltaScale -= config.scrollSpeed
 
         else:
           discard
@@ -347,11 +362,17 @@ proc main() =
       else:
         discard
 
-    camera.update(config, 1.0 / config.fps.float, mouse, screenshot)
+    let dt = 1.0 / config.fps.float
+    camera.update(config, dt, mouse, screenshot)
+
+    if flashlight:
+      f = min(f + 6.0 * dt, 0.8)
+    else:
+      f = max(f - 6.0 * dt, 0.0)
 
     screenshot.draw(camera, shaderProgram, vao, texture,
                     vec2(wa.width.float32, wa.height.float32),
-                    mouse)
+                    mouse, f, flRadius)
 
     glXSwapBuffers(display, win)
 
