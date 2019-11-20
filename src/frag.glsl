@@ -11,9 +11,7 @@ const float FLASHLIGHT_RADIUS = 200.0;
 void main()
 {
     vec4 cursor = vec4(cursorPos.x, windowSize.y - cursorPos.y, 0.0, 1.0);
-    if (length(cursor - gl_FragCoord) < FLASHLIGHT_RADIUS) {
-        color = texture(tex, texcoord);
-    } else {
-        color = texture(tex, texcoord) - vec4(flShadow, flShadow, flShadow, 0.0);
-    }
+    color = mix(
+        texture(tex, texcoord), vec4(0.0, 0.0, 0.0, 0.0),
+        length(cursor - gl_FragCoord) < FLASHLIGHT_RADIUS ? 0.0 : flShadow);
 }
