@@ -78,7 +78,7 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
   glUseProgram(result)
 
 proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
-          windowSize: Vec2f, mouse: Mouse, flShadow: float32) =
+          windowSize: Vec2f, mouse: Mouse, flShadow: float32, flRadius: float32) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -96,6 +96,7 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
               mouse.curr.x.float32,
               mouse.curr.y.float32)
   glUniform1f(glGetUniformLocation(shader, "flShadow".cstring), flShadow)
+  glUniform1f(glGetUniformLocation(shader, "flRadius".cstring), flRadius)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -271,6 +272,7 @@ proc main() =
     mouse: Mouse
     flashlight = false
     f = 0.0
+    flRadius = 200.0
 
   while not quitting:
     var wa: TXWindowAttributes
@@ -336,10 +338,16 @@ proc main() =
           mouse.drag = true
 
         of Button4:
-          camera.deltaScale += config.scrollSpeed
+          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
+            flRadius += 10.0
+          else:
+            camera.deltaScale += config.scrollSpeed
 
         of Button5:
-          camera.deltaScale -= config.scrollSpeed
+          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
+            flRadius = max(flRadius - 10.0, 0.0)
+          else:
+            camera.deltaScale -= config.scrollSpeed
 
         else:
           discard
@@ -363,7 +371,7 @@ proc main() =
 
     screenshot.draw(camera, shaderProgram, vao, texture,
                     vec2(wa.width.float32, wa.height.float32),
-                    mouse, f)
+                    mouse, f, flRadius)
 
     glXSwapBuffers(display, win)
 
