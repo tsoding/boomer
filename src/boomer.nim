@@ -270,6 +270,7 @@ proc main() =
     camera = Camera(scale: 1.0)
     mouse: Mouse
     flashlight = false
+    f = 0.0
 
   while not quitting:
     var wa: TXWindowAttributes
@@ -352,11 +353,17 @@ proc main() =
       else:
         discard
 
-    camera.update(config, 1.0 / config.fps.float, mouse, screenshot)
+    let dt = 1.0 / config.fps.float
+    camera.update(config, dt, mouse, screenshot)
+
+    if flashlight:
+      f = min(f + 6.0 * dt, 0.8)
+    else:
+      f = max(f - 6.0 * dt, 0.0)
 
     screenshot.draw(camera, shaderProgram, vao, texture,
                     vec2(wa.width.float32, wa.height.float32),
-                    mouse, if flashlight: 0.8 else: 0.0)
+                    mouse, f)
 
     glXSwapBuffers(display, win)
 
