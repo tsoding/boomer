@@ -12,7 +12,7 @@ Zoomer application for Linux.
 
 ```console
 $ nix-shell   # only for NixOS
-$ nimble build
+$ nimble build -d:release
 $ ./boomer
 ```
 
