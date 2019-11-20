@@ -3,7 +3,7 @@
 
 # Boomer
 
-Zoomer application for boomers
+Zoomer application for Linux.
 
 - Development is done on https://twitch.tv/tsoding
 - Archive of the streams: https://www.twitch.tv/collections/HlRy-q69uBXmpQ
