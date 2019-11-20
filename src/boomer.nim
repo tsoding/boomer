@@ -78,7 +78,7 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
   glUseProgram(result)
 
 proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
-          windowSize: Vec2f, mouse: Mouse) =
+          windowSize: Vec2f, mouse: Mouse, flShadow: float32) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -95,6 +95,7 @@ proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
   glUniform2f(glGetUniformLocation(shader, "cursorPos".cstring),
               mouse.curr.x.float32,
               mouse.curr.y.float32)
+  glUniform1f(glGetUniformLocation(shader, "flShadow".cstring), flShadow)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -268,6 +269,7 @@ proc main() =
     quitting = false
     camera = Camera(scale: 1.0)
     mouse: Mouse
+    flashlight = false
 
   while not quitting:
     var wa: TXWindowAttributes
@@ -320,6 +322,9 @@ proc main() =
             shaderProgram = newShaderProgram(vertexShader, fragmentShader)
             echo "Shader program ID: ", shaderProgram
             echo "------------------------------"
+
+        of XK_f:
+          flashlight = not flashlight
         else:
           discard
 
@@ -351,7 +356,7 @@ proc main() =
 
     screenshot.draw(camera, shaderProgram, vao, texture,
                     vec2(wa.width.float32, wa.height.float32),
-                    mouse)
+                    mouse, if flashlight: 0.8 else: 0.0)
 
     glXSwapBuffers(display, win)
 
