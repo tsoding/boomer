@@ -17,12 +17,16 @@ type Camera* = object
   deltaScale*: float
 
 proc world*(camera: Camera, v: Vec2f): Vec2f =
-  (camera.position + v) / camera.scale
+  v / camera.scale
 
-proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image: Image) =
+proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image: Image,
+             windowSize: Vec2f) =
   if abs(camera.deltaScale) > 0.5:
-    # TODO(#48): camera position adjustment doesn't work anymore
+    let p0 = (mouse.curr - (windowSize * 0.5)) / camera.scale
     camera.scale = max(camera.scale + camera.delta_scale * dt, 0.01)
+    let p1 = (mouse.curr - (windowSize * 0.5)) / camera.scale
+    camera.position += p0 - p1
+
     camera.delta_scale -= sgn(camera.delta_scale).float * config.scale_friction * dt
 
   if not mouse.drag and (camera.velocity.length > VELOCITY_THRESHOLD):

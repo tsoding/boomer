@@ -350,7 +350,8 @@ proc main() =
         discard
 
     let dt = 1.0 / config.fps.float
-    camera.update(config, dt, mouse, screenshot)
+    camera.update(config, dt, mouse, screenshot,
+                  vec2(wa.width.float32, wa.height.float32))
 
     if flashlight:
       f = min(f + 6.0 * dt, 0.8)
