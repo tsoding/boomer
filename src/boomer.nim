@@ -339,6 +339,7 @@ proc main() =
 
         of Button4:
           if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
+            # TODO: changing flashlight radius should be animated
             flRadius += 10.0
           else:
             camera.deltaScale += config.scrollSpeed
