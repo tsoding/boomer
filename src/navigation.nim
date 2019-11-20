@@ -25,8 +25,6 @@ proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image:
     let p0 = (mouse.curr - (windowSize * 0.5)) / camera.scale
     camera.scale = max(camera.scale + camera.delta_scale * dt, 0.01)
     let p1 = (mouse.curr - (windowSize * 0.5)) / camera.scale
-
-    echo p0, " ", p1
     camera.position += p0 - p1
 
     camera.delta_scale -= sgn(camera.delta_scale).float * config.scale_friction * dt
