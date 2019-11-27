@@ -324,14 +324,17 @@ proc main() =
 
           when isDebug:
             if (xev.xkey.state and ControlMask) > 0.uint32:
-              # TODO(#53): Custom shader file reading and compilation errors crash the whole application
               echo "------------------------------"
               echo "RELOADING SHADERS"
-              glDeleteProgram(shaderProgram)
-              reloadShader(vertexShader)
-              reloadShader(fragmentShader)
-              shaderProgram = newShaderProgram(vertexShader, fragmentShader)
-              echo "Shader program ID: ", shaderProgram
+              try:
+                reloadShader(vertexShader)
+                reloadShader(fragmentShader)
+                let newShaderProgram = newShaderProgram(vertexShader, fragmentShader)
+                glDeleteProgram(shaderProgram)
+                shaderProgram = newShaderProgram
+                echo "Shader program ID: ", shaderProgram
+              except GLerror:
+                echo "Could not reload the shaders"
               echo "------------------------------"
 
         of XK_f:
