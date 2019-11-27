@@ -10,8 +10,7 @@ type Config* = object
 const defaultConfig* = Config(
   scrollSpeed: 1.0,
   dragVelocityFactor: 10.0,
-  # TODO(#54): For a natual feel dragFriction probably should depend on velocity
-  dragFriction: 600.0,
+  dragFriction: 3.0,
   scaleFriction: 10.0,
   fps: 60
 )

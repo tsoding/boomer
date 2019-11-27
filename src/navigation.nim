@@ -31,4 +31,4 @@ proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image:
 
   if not mouse.drag and (camera.velocity.length > VELOCITY_THRESHOLD):
     camera.position += camera.velocity * dt
-    camera.velocity -= camera.velocity.normalize * (config.dragFriction * dt)
+    camera.velocity -= camera.velocity * dt * config.dragFriction
