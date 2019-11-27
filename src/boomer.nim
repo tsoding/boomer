@@ -256,7 +256,7 @@ proc main() =
     camera = Camera(scale: 1.0)
     mouse: Mouse
     flashlight = false
-    f = 0.0
+    flShadow = 0.0
     flRadius = 200.0
 
   while not quitting:
@@ -323,14 +323,14 @@ proc main() =
           mouse.prev = mouse.curr
           mouse.drag = true
 
-        of Button4:
+        of Button4:             # Scroll up
           if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
             # TODO(#57): changing flashlight radius should be animated
             flRadius += 10.0
           else:
             camera.deltaScale += config.scrollSpeed
 
-        of Button5:
+        of Button5:             # Scoll down
           if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
             flRadius = max(flRadius - 10.0, 0.0)
           else:
@@ -353,13 +353,13 @@ proc main() =
                   vec2(wa.width.float32, wa.height.float32))
 
     if flashlight:
-      f = min(f + 6.0 * dt, 0.8)
+      flShadow = min(flShadow + 6.0 * dt, 0.8)
     else:
-      f = max(f - 6.0 * dt, 0.0)
+      flShadow = max(flShadow - 6.0 * dt, 0.0)
 
     screenshot.draw(camera, shaderProgram, vao, texture,
                     vec2(wa.width.float32, wa.height.float32),
-                    mouse, f, flRadius)
+                    mouse, flShadow, flRadius)
 
     glXSwapBuffers(display, win)
 
