@@ -82,6 +82,21 @@ type Flashlight = object
   radius: float32
   deltaRadius: float32
 
+const
+  INITIAL_FL_DELTA_RADIUS = 100.0
+  FL_DELTA_RADIUS_DECELERATION = 400.0
+
+proc update(flashlight: var Flashlight, dt: float32) =
+  flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
+  if abs(flashlight.deltaRadius) > 0.5:
+    flashlight.deltaRadius -= sgn(flashlight.deltaRadius).float32 * FL_DELTA_RADIUS_DECELERATION * dt
+
+  if flashlight.isEnabled:
+    flashlight.shadow = min(flashlight.shadow + 6.0 * dt, 0.8)
+  else:
+    flashlight.shadow = max(flashlight.shadow - 6.0 * dt, 0.0)
+
+
 proc draw(screenshot: Image, camera: Camera, shader, vao, texture: GLuint,
           windowSize: Vec2f, mouse: Mouse, flashlight: Flashlight) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
@@ -266,10 +281,6 @@ proc main() =
       isEnabled: false,
       radius: 200.0)
 
-  const
-    INITIAL_FL_DELTA_RADIUS = 100.0
-    FL_DELTA_RADIUS_DECELERATION = 400.0
-
   while not quitting:
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
@@ -361,15 +372,7 @@ proc main() =
     let dt = 1.0 / config.fps.float
     camera.update(config, dt, mouse, screenshot,
                   vec2(wa.width.float32, wa.height.float32))
-
-    flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
-    if abs(flashlight.deltaRadius) > 0.5:
-      flashlight.deltaRadius -= sgn(flashlight.deltaRadius).float32 * FL_DELTA_RADIUS_DECELERATION * dt
-
-    if flashlight.isEnabled:
-      flashlight.shadow = min(flashlight.shadow + 6.0 * dt, 0.8)
-    else:
-      flashlight.shadow = max(flashlight.shadow - 6.0 * dt, 0.0)
+    flashlight.update(dt)
 
     screenshot.draw(camera, shaderProgram, vao, texture,
                     vec2(wa.width.float32, wa.height.float32),
