@@ -75,7 +75,7 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
 
   glUseProgram(result)
 
-proc draw(screenshot: Image, camera: var Camera, shader, vao, texture: GLuint,
+proc draw(screenshot: Image, camera: Camera, shader, vao, texture: GLuint,
           windowSize: Vec2f, mouse: Mouse, flShadow: float32, flRadius: float32) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
