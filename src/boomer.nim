@@ -363,7 +363,7 @@ proc main() =
                   vec2(wa.width.float32, wa.height.float32))
 
     flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
-    if abs(flashlight.deltaRadius) > 0.0:
+    if abs(flashlight.deltaRadius) > 0.5:
       flashlight.deltaRadius -= sgn(flashlight.deltaRadius).float32 * FL_DELTA_RADIUS_DECELERATION * dt
 
     if flashlight.isEnabled:
