@@ -27,7 +27,7 @@ proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image:
     let p1 = (mouse.curr - (windowSize * 0.5)) / camera.scale
     camera.position += p0 - p1
 
-    camera.delta_scale -= sgn(camera.delta_scale).float * config.scale_friction * dt
+    camera.delta_scale -= camera.delta_scale * dt * config.scale_friction
 
   if not mouse.drag and (camera.velocity.length > VELOCITY_THRESHOLD):
     camera.position += camera.velocity * dt

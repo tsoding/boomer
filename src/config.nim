@@ -10,8 +10,8 @@ type Config* = object
 const defaultConfig* = Config(
   scrollSpeed: 1.0,
   dragVelocityFactor: 10.0,
-  dragFriction: 3.0,
-  scaleFriction: 10.0,
+  dragFriction: 2.0,
+  scaleFriction: 4.0,
   fps: 60
 )
 
