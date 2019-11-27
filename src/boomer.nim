@@ -6,6 +6,7 @@ import config
 
 import x11/xlib, x11/x, x11/xutil, x11/keysym
 import opengl, opengl/glx
+import math
 import la
 
 type Shader = tuple[path, content: string]
@@ -75,8 +76,14 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
 
   glUseProgram(result)
 
+type Flashlight = object
+  isEnabled: bool
+  shadow: float32
+  radius: float32
+  deltaRadius: float32
+
 proc draw(screenshot: Image, camera: Camera, shader, vao, texture: GLuint,
-          windowSize: Vec2f, mouse: Mouse, flShadow: float32, flRadius: float32) =
+          windowSize: Vec2f, mouse: Mouse, flashlight: Flashlight) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -93,8 +100,8 @@ proc draw(screenshot: Image, camera: Camera, shader, vao, texture: GLuint,
   glUniform2f(glGetUniformLocation(shader, "cursorPos".cstring),
               mouse.curr.x.float32,
               mouse.curr.y.float32)
-  glUniform1f(glGetUniformLocation(shader, "flShadow".cstring), flShadow)
-  glUniform1f(glGetUniformLocation(shader, "flRadius".cstring), flRadius)
+  glUniform1f(glGetUniformLocation(shader, "flShadow".cstring), flashlight.shadow)
+  glUniform1f(glGetUniformLocation(shader, "flRadius".cstring), flashlight.radius)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -255,9 +262,13 @@ proc main() =
     quitting = false
     camera = Camera(scale: 1.0)
     mouse: Mouse
-    flashlight = false
-    flShadow = 0.0
-    flRadius = 200.0
+    flashlight = Flashlight(
+      isEnabled: false,
+      radius: 200.0)
+
+  const
+    INITIAL_FL_DELTA_RADIUS = 100.0
+    FL_DELTA_RADIUS_DECELERATION = 400.0
 
   while not quitting:
     var wa: TXWindowAttributes
@@ -313,7 +324,7 @@ proc main() =
               echo "------------------------------"
 
         of XK_f:
-          flashlight = not flashlight
+          flashlight.isEnabled = not flashlight.isEnabled
         else:
           discard
 
@@ -324,15 +335,14 @@ proc main() =
           mouse.drag = true
 
         of Button4:             # Scroll up
-          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
-            # TODO(#57): changing flashlight radius should be animated
-            flRadius += 10.0
+          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
+            flashlight.deltaRadius += INITIAL_FL_DELTA_RADIUS
           else:
             camera.deltaScale += config.scrollSpeed
 
         of Button5:             # Scoll down
-          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight:
-            flRadius = max(flRadius - 10.0, 0.0)
+          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
+            flashlight.deltaRadius -= INITIAL_FL_DELTA_RADIUS
           else:
             camera.deltaScale -= config.scrollSpeed
 
@@ -352,14 +362,18 @@ proc main() =
     camera.update(config, dt, mouse, screenshot,
                   vec2(wa.width.float32, wa.height.float32))
 
-    if flashlight:
-      flShadow = min(flShadow + 6.0 * dt, 0.8)
+    flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
+    if abs(flashlight.deltaRadius) > 0.0:
+      flashlight.deltaRadius -= sgn(flashlight.deltaRadius).float32 * FL_DELTA_RADIUS_DECELERATION * dt
+
+    if flashlight.isEnabled:
+      flashlight.shadow = min(flashlight.shadow + 6.0 * dt, 0.8)
     else:
-      flShadow = max(flShadow - 6.0 * dt, 0.0)
+      flashlight.shadow = max(flashlight.shadow - 6.0 * dt, 0.0)
 
     screenshot.draw(camera, shaderProgram, vao, texture,
                     vec2(wa.width.float32, wa.height.float32),
-                    mouse, flShadow, flRadius)
+                    mouse, flashlight)
 
     glXSwapBuffers(display, win)
 
