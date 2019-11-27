@@ -348,6 +348,7 @@ proc main() =
         of Button1:
           mouse.prev = mouse.curr
           mouse.drag = true
+          camera.velocity = vec2(0.0, 0.0)
 
         of Button4:             # Scroll up
           if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
