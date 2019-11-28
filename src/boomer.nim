@@ -83,13 +83,13 @@ type Flashlight = object
   deltaRadius: float32
 
 const
-  INITIAL_FL_DELTA_RADIUS = 100.0
-  FL_DELTA_RADIUS_DECELERATION = 5.0
+  INITIAL_FL_DELTA_RADIUS = 250.0
+  FL_DELTA_RADIUS_DECELERATION = 10.0
 
 proc update(flashlight: var Flashlight, dt: float32) =
   flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
 
-  if abs(flashlight.deltaRadius) > 0.5:
+  if abs(flashlight.deltaRadius) > 1.0:
     flashlight.deltaRadius -= flashlight.deltaRadius * FL_DELTA_RADIUS_DECELERATION * dt
 
   if flashlight.isEnabled:
