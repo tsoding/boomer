@@ -84,12 +84,13 @@ type Flashlight = object
 
 const
   INITIAL_FL_DELTA_RADIUS = 100.0
-  FL_DELTA_RADIUS_DECELERATION = 400.0
+  FL_DELTA_RADIUS_DECELERATION = 5.0
 
 proc update(flashlight: var Flashlight, dt: float32) =
   flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
+
   if abs(flashlight.deltaRadius) > 0.5:
-    flashlight.deltaRadius -= sgn(flashlight.deltaRadius).float32 * FL_DELTA_RADIUS_DECELERATION * dt
+    flashlight.deltaRadius -= flashlight.deltaRadius * FL_DELTA_RADIUS_DECELERATION * dt
 
   if flashlight.isEnabled:
     flashlight.shadow = min(flashlight.shadow + 6.0 * dt, 0.8)
@@ -347,6 +348,7 @@ proc main() =
         of Button1:
           mouse.prev = mouse.curr
           mouse.drag = true
+          camera.velocity = vec2(0.0, 0.0)
 
         of Button4:             # Scroll up
           if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
