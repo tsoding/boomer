@@ -358,12 +358,14 @@ proc main() =
             flashlight.deltaRadius += INITIAL_FL_DELTA_RADIUS
           else:
             camera.deltaScale += config.scrollSpeed
+            camera.scalePivot = mouse.curr
 
         of Button5:             # Scoll down
           if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
             flashlight.deltaRadius -= INITIAL_FL_DELTA_RADIUS
           else:
             camera.deltaScale -= config.scrollSpeed
+            camera.scalePivot = mouse.curr
 
         else:
           discard
