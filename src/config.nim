@@ -2,15 +2,13 @@ import macros, strutils
 
 type Config* = object
   scrollSpeed*: float
-  dragVelocityFactor*: float
   dragFriction*: float
   scaleFriction*: float
   fps*: int
 
 const defaultConfig* = Config(
-  scrollSpeed: 1.0,
-  dragVelocityFactor: 10.0,
-  dragFriction: 2.0,
+  scrollSpeed: 1.5,
+  dragFriction: 6.0,
   scaleFriction: 4.0,
   fps: 60
 )

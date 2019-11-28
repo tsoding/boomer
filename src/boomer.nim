@@ -301,7 +301,10 @@ proc main() =
         if mouse.drag:
           let delta = world(camera, mouse.prev) - world(camera, mouse.curr)
           camera.position += delta
-          camera.velocity = delta * config.dragVelocityFactor
+          # delta is the distance the mouse traveled in a single
+          # frame. To turn the velocity into units/second we need to
+          # multiple it by FPS.
+          camera.velocity = delta * config.fps.float
 
         mouse.prev = mouse.curr
 
