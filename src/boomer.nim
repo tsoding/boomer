@@ -4,7 +4,7 @@ import navigation
 import image
 import config
 
-import x11/xlib, x11/x, x11/xutil, x11/keysym
+import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr
 import opengl, opengl/glx
 import math
 import la
@@ -147,6 +147,10 @@ proc main() =
     discard XCloseDisplay(display)
 
   var root = DefaultRootWindow(display)
+
+  var screenConfig = XRRGetScreenInfo(display, root)
+  let rate = XRRConfigCurrentRate(screenConfig)
+  echo "Screen rate: ", rate
 
   var screenshot = takeScreenshot(display, root)
   assert screenshot.bpp == 32
