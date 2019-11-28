@@ -83,13 +83,13 @@ type Flashlight = object
   deltaRadius: float32
 
 const
-  INITIAL_FL_DELTA_RADIUS = 100.0
-  FL_DELTA_RADIUS_DECELERATION = 5.0
+  INITIAL_FL_DELTA_RADIUS = 250.0
+  FL_DELTA_RADIUS_DECELERATION = 10.0
 
 proc update(flashlight: var Flashlight, dt: float32) =
   flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
 
-  if abs(flashlight.deltaRadius) > 0.5:
+  if abs(flashlight.deltaRadius) > 1.0:
     flashlight.deltaRadius -= flashlight.deltaRadius * FL_DELTA_RADIUS_DECELERATION * dt
 
   if flashlight.isEnabled:
@@ -301,7 +301,10 @@ proc main() =
         if mouse.drag:
           let delta = world(camera, mouse.prev) - world(camera, mouse.curr)
           camera.position += delta
-          camera.velocity = delta * config.dragVelocityFactor
+          # delta is the distance the mouse traveled in a single
+          # frame. To turn the velocity into units/second we need to
+          # multiple it by FPS.
+          camera.velocity = delta * config.fps.float
 
         mouse.prev = mouse.curr
 
@@ -355,12 +358,14 @@ proc main() =
             flashlight.deltaRadius += INITIAL_FL_DELTA_RADIUS
           else:
             camera.deltaScale += config.scrollSpeed
+            camera.scalePivot = mouse.curr
 
         of Button5:             # Scoll down
           if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
             flashlight.deltaRadius -= INITIAL_FL_DELTA_RADIUS
           else:
             camera.deltaScale -= config.scrollSpeed
+            camera.scalePivot = mouse.curr
 
         else:
           discard

@@ -3,7 +3,7 @@ import config
 import la
 import image
 
-const VELOCITY_THRESHOLD = 10.0
+const VELOCITY_THRESHOLD = 15.0
 
 type Mouse* = object
   curr*: Vec2f
@@ -15,6 +15,7 @@ type Camera* = object
   velocity*: Vec2f
   scale*: float32
   deltaScale*: float
+  scalePivot*: Vec2f
 
 proc world*(camera: Camera, v: Vec2f): Vec2f =
   v / camera.scale
@@ -22,9 +23,9 @@ proc world*(camera: Camera, v: Vec2f): Vec2f =
 proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image: Image,
              windowSize: Vec2f) =
   if abs(camera.deltaScale) > 0.5:
-    let p0 = (mouse.curr - (windowSize * 0.5)) / camera.scale
+    let p0 = (camera.scalePivot - (windowSize * 0.5)) / camera.scale
     camera.scale = max(camera.scale + camera.delta_scale * dt, 0.01)
-    let p1 = (mouse.curr - (windowSize * 0.5)) / camera.scale
+    let p1 = (camera.scalePivot - (windowSize * 0.5)) / camera.scale
     camera.position += p0 - p1
 
     camera.delta_scale -= camera.delta_scale * dt * config.scale_friction
