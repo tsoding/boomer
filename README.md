@@ -8,6 +8,10 @@ Zoomer application for Linux.
 - Development is done on https://twitch.tv/tsoding
 - Archive of the streams: https://www.twitch.tv/collections/HlRy-q69uBXmpQ
 
+**WARNING! The application is in an active development state and is
+not even alpha yet. Use it at your own risk. Nothing is documented,
+anything can be changed at any moment or stop working at all.**
+
 ## Quick Start
 
 ```console
