@@ -37,7 +37,7 @@ proc loadConfig*(filePath: string): Config =
   result = defaultConfig
   for rawLine in filePath.lines:
     let line = rawLine.strip
-    if line.len > 0 and line[0] == '#':
+    if line.len == 0 or line[0] == '#':
       continue
     let pair = line.split('=', 1)
     let key = pair[0].strip
