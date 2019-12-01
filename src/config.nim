@@ -36,9 +36,9 @@ macro parseObject(obj: typed, key, val: string) =
 proc loadConfig*(filePath: string): Config =
   result = defaultConfig
   for rawLine in filePath.lines:
-    if rawLine.len == 0:
-      continue
     let line = rawLine.strip
+    if line.len == 0:
+      continue
     if line.len > 0 and line[0] == '#':
       continue
     let pair = line.split('=', 1)
