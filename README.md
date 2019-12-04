@@ -16,9 +16,20 @@ anything can be changed at any moment or stop working at all.**
 
 ```console
 $ nix-shell   # only for NixOS
-$ nimble build -d:release
+$ nimble build
 $ ./boomer
 ```
+
+## Developer Capabilities
+
+For additional Developer Capabilities compile the application with the following flags:
+
+```console
+$ nimble build -d:developer
+```
+
+This will enable:
+- Reloading the shaders with `Ctrl+R`
 
 ## NixOS Overlay
 

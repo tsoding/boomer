@@ -19,10 +19,7 @@ proc readShader(file: string): Shader =
     result.path = "src" / file
     result.content = readFile result.path
 
-const
-  isDebug = not (defined(danger) or defined(release))
-
-when isDebug:
+when defined(developer):
   var
     vertexShader = readShader "vert.glsl"
     fragmentShader = readShader "frag.glsl"
@@ -40,16 +37,16 @@ proc newShader(shader: Shader, kind: GLenum): GLuint =
   glShaderSource(result, 1, shaderArray, nil)
   glCompileShader(result)
   deallocCStringArray(shaderArray)
-  when isDebug:
-    var success: GLint
-    var infoLog = newString(512).cstring
-    glGetShaderiv(result, GL_COMPILE_STATUS, addr success)
-    if not success.bool:
-      glGetShaderInfoLog(result, 512, nil, infoLog)
-      echo "------------------------------"
-      echo "Error during shader compilation: ", shader.path, ". Log:"
-      echo infoLog
-      echo "------------------------------"
+
+  var success: GLint
+  var infoLog = newString(512).cstring
+  glGetShaderiv(result, GL_COMPILE_STATUS, addr success)
+  if not success.bool:
+    glGetShaderInfoLog(result, 512, nil, infoLog)
+    echo "------------------------------"
+    echo "Error during shader compilation: ", shader.path, ". Log:"
+    echo infoLog
+    echo "------------------------------"
 
 proc newShaderProgram(vertex, fragment: Shader): GLuint =
   result = glCreateProgram()
@@ -66,13 +63,12 @@ proc newShaderProgram(vertex, fragment: Shader): GLuint =
   glDeleteShader(vertexShader)
   glDeleteShader(fragmentShader)
 
-  when isDebug:
-    var success: GLint
-    var infoLog = newString(512).cstring
-    glGetProgramiv(result, GL_LINK_STATUS, addr success)
-    if not success.bool:
-      glGetProgramInfoLog(result, 512, nil, infoLog)
-      echo infoLog
+  var success: GLint
+  var infoLog = newString(512).cstring
+  glGetProgramiv(result, GL_LINK_STATUS, addr success)
+  if not success.bool:
+    glGetProgramInfoLog(result, 512, nil, infoLog)
+    echo infoLog
 
   glUseProgram(result)
 
@@ -329,7 +325,7 @@ proc main() =
           if configFile.len > 0 and existsFile(configFile):
             config = loadConfig(configFile)
 
-          when isDebug:
+          when defined(developer):
             if (xev.xkey.state and ControlMask) > 0.uint32:
               echo "------------------------------"
               echo "RELOADING SHADERS"
