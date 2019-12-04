@@ -151,7 +151,7 @@ proc main() =
   echo "Screen rate: ", rate
 
   var screenshot = takeScreenshot(display, root)
-  assert screenshot.bpp == 32
+  assert screenshot.bits_per_pixel == 32
 
   let screen = XDefaultScreen(display)
   var glxMajor, glxMinor: int
@@ -264,7 +264,7 @@ proc main() =
                # TODO(#13): the texture format is hardcoded
                GL_BGRA,
                GL_UNSIGNED_BYTE,
-               screenshot.pixels)
+               screenshot.data)
   glGenerateMipmap(GL_TEXTURE_2D)
 
   glUniform1i(glGetUniformLocation(shaderProgram, "tex".cstring), 0)

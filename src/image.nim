@@ -1,8 +1,6 @@
 import x11/xlib, x11/x
 
-type Image* = object
-  width*, height*, bpp*: cint
-  pixels*: cstring
+type Image* = PXImage
 
 proc saveToPPM*(image: Image, filePath: string) =
   var f = open(filePath, fmWrite)
@@ -11,9 +9,9 @@ proc saveToPPM*(image: Image, filePath: string) =
   writeLine(f, image.width, " ", image.height)
   writeLine(f, 255)
   for i in 0..<(image.width * image.height):
-    f.write(image.pixels[i * 4 + 2])
-    f.write(image.pixels[i * 4 + 1])
-    f.write(image.pixels[i * 4 + 0])
+    f.write(image.data[i * 4 + 2])
+    f.write(image.data[i * 4 + 1])
+    f.write(image.data[i * 4 + 0])
 
 # NOTE: it's not possible to deallocate the returned Image because the
 # reference to XImage is lost.
@@ -21,16 +19,11 @@ proc takeScreenshot*(display: PDisplay, root: TWindow): Image =
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(display, root, addr attributes)
 
-  var screenshot = XGetImage(display, root,
+  result = XGetImage(display, root,
                              0, 0,
                              attributes.width.cuint,
                              attributes.height.cuint,
                              AllPlanes,
                              ZPixmap)
-  if screenshot == nil:
+  if result == nil:
     quit "Could not get a screenshot"
-
-  result.width = attributes.width
-  result.height = attributes.height
-  result.bpp = screenshot.bits_per_pixel
-  result.pixels = screenshot.data
