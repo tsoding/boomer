@@ -30,6 +30,16 @@ $ ln -s /path/to/boomer/overlay/ boomer
 $ nix-env -iA nixos.boomer
 ```
 
+## Experimental Live Update
+
+See issue [#26]. For an experimental Live Update feature compile the application with the following flags:
+
+```console
+$ nimble build -d:live
+```
+
+The feature is really unstable and experimental, so use it at your own risk.
+
 ## References
 
 - https://github.com/nim-lang/x11/blob/bf9dc74dd196a98b7c2a2beea4d92640734f7c60/examples/x11ex.nim
@@ -46,3 +56,5 @@ You can support my work via
 
 - Twitch channel: https://www.twitch.tv/subs/tsoding
 - Patreon: https://www.patreon.com/tsoding
+
+[#26]: https://github.com/tsoding/boomer/issues/26
