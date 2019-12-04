@@ -31,16 +31,6 @@ $ nimble build -d:developer
 This will enable:
 - Reloading the shaders with `Ctrl+R`
 
-## NixOS Overlay
-
-```
-$ git clone git://github.com/tsoding/boomer.git /path/to/boomer
-$ mkdir -p ~/.config/nixpkgs/overlays
-$ cd ~/.config/nixpkgs/overlays
-$ ln -s /path/to/boomer/overlay/ boomer
-$ nix-env -iA nixos.boomer
-```
-
 ## Experimental Live Update
 
 See issue [#26]. For an experimental Live Update feature compile the application with the following flags:
@@ -50,6 +40,16 @@ $ nimble build -d:live
 ```
 
 The feature is really unstable and experimental, so use it at your own risk.
+
+## NixOS Overlay
+
+```
+$ git clone git://github.com/tsoding/boomer.git /path/to/boomer
+$ mkdir -p ~/.config/nixpkgs/overlays
+$ cd ~/.config/nixpkgs/overlays
+$ ln -s /path/to/boomer/overlay/ boomer
+$ nix-env -iA nixos.boomer
+```
 
 ## References
 
