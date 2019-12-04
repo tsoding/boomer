@@ -4,13 +4,11 @@ type Config* = object
   scrollSpeed*: float
   dragFriction*: float
   scaleFriction*: float
-  fps*: int
 
 const defaultConfig* = Config(
   scrollSpeed: 1.5,
   dragFriction: 6.0,
   scaleFriction: 4.0,
-  fps: 60
 )
 
 macro parseObject(obj: typed, key, val: string) =

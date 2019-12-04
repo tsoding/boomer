@@ -4,7 +4,7 @@ import navigation
 import image
 import config
 
-import x11/xlib, x11/x, x11/xutil, x11/keysym
+import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr
 import opengl, opengl/glx
 import math
 import la
@@ -148,6 +148,10 @@ proc main() =
 
   var root = DefaultRootWindow(display)
 
+  var screenConfig = XRRGetScreenInfo(display, root)
+  let rate = XRRConfigCurrentRate(screenConfig)
+  echo "Screen rate: ", rate
+
   var screenshot = takeScreenshot(display, root)
   assert screenshot.bpp == 32
 
@@ -282,6 +286,7 @@ proc main() =
       isEnabled: false,
       radius: 200.0)
 
+  let dt = 1.0 / rate.float
   while not quitting:
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
@@ -304,7 +309,7 @@ proc main() =
           # delta is the distance the mouse traveled in a single
           # frame. To turn the velocity into units/second we need to
           # multiple it by FPS.
-          camera.velocity = delta * config.fps.float
+          camera.velocity = delta * rate.float
 
         mouse.prev = mouse.curr
 
@@ -379,7 +384,6 @@ proc main() =
       else:
         discard
 
-    let dt = 1.0 / config.fps.float
     camera.update(config, dt, mouse, screenshot,
                   vec2(wa.width.float32, wa.height.float32))
     flashlight.update(dt)
@@ -389,5 +393,6 @@ proc main() =
                     mouse, flashlight)
 
     glXSwapBuffers(display, win)
+    glFinish()
 
 main()

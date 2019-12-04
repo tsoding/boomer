@@ -9,10 +9,11 @@ in rec {
                     pkgconfig
                     nim_1_0
                     xorg.libX11
+                    xorg.libXrandr
                     libGL
                     libGLU
                     freeglut
                   ];
-    LD_LIBRARY_PATH="/run/opengl-driver/lib;${xorg.libX11}/lib/;${libGL}/lib/;${libGLU}/lib;${freeglut}/lib";
+    LD_LIBRARY_PATH="/run/opengl-driver/lib;${xorg.libX11}/lib/;${libGL}/lib/;${libGLU}/lib;${freeglut}/lib;${xorg.libXrandr}/lib";
   };
 }
