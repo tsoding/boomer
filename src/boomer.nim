@@ -393,4 +393,24 @@ proc main() =
     glXSwapBuffers(display, win)
     glFinish()
 
+    when defined(live):
+      screenshot = XGetSubImage(display, root,
+                                0, 0,
+                                screenshot.width.cuint,
+                                screenshot.height.cuint,
+                                AllPlanes,
+                                ZPixmap,
+                                screenshot,
+                                0, 0)
+      glTexImage2D(GL_TEXTURE_2D,
+                   0,
+                   GL_RGB.GLint,
+                   screenshot.width,
+                   screenshot.height,
+                   0,
+                   # TODO(#13): the texture format is hardcoded
+                   GL_BGRA,
+                   GL_UNSIGNED_BYTE,
+                   screenshot.data)
+
 main()
