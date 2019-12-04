@@ -87,16 +87,14 @@ const
   FL_DELTA_RADIUS_DECELERATION = 10.0
 
 proc update(flashlight: var Flashlight, dt: float32) =
-  flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
-
   if abs(flashlight.deltaRadius) > 1.0:
+    flashlight.radius = max(0.0, flashlight.radius + flashlight.deltaRadius * dt)
     flashlight.deltaRadius -= flashlight.deltaRadius * FL_DELTA_RADIUS_DECELERATION * dt
 
   if flashlight.isEnabled:
     flashlight.shadow = min(flashlight.shadow + 6.0 * dt, 0.8)
   else:
     flashlight.shadow = max(flashlight.shadow - 6.0 * dt, 0.0)
-
 
 proc draw(screenshot: Image, camera: Camera, shader, vao, texture: GLuint,
           windowSize: Vec2f, mouse: Mouse, flashlight: Flashlight) =
