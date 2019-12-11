@@ -4,12 +4,18 @@ import navigation
 import image
 import config
 
-import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr
+import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr, x11/xshm
 import opengl, opengl/glx
 import math
 import la
+import syscall
 
 type Shader = tuple[path, content: string]
+
+const
+  IPC_PRIVATE = 0
+  IPC_CREAT = 512
+  IPC_RMID = 0
 
 proc readShader(file: string): Shader =
   when nimvm:
@@ -146,9 +152,6 @@ proc main() =
   let rate = XRRConfigCurrentRate(screenConfig)
   echo "Screen rate: ", rate
 
-  var screenshot = takeScreenshot(display, root)
-  assert screenshot.bits_per_pixel == 32
-
   let screen = XDefaultScreen(display)
   var glxMajor, glxMinor: int
 
@@ -170,6 +173,7 @@ proc main() =
   if vi == nil:
     quit "No appropriate visual found"
 
+
   echo "Visual ", vi.visualid, " selected"
   var swa: TXSetWindowAttributes
   swa.colormap = XCreateColormap(display, root,
@@ -177,9 +181,36 @@ proc main() =
   swa.event_mask = ButtonPressMask or ButtonReleaseMask or KeyPressMask or
                    PointerMotionMask or ExposureMask or ClientMessage
 
+  var attributes: TXWindowAttributes
+  discard XGetWindowAttributes(
+    display,
+    DefaultRootWindow(display),
+    addr attributes)
+
+  var shminfo: TXShmSegmentInfo
+  var screenshot = XShmCreateImage(
+    display, vi.visual, 24.cuint, ZPixmap, nil,
+    addr shminfo,
+    attributes.width.cuint,
+    attributes.height.cuint)
+
+  shminfo.shmid = syscall(SHMGET,
+                          IPC_PRIVATE,
+                          screenshot.bytes_per_line * screenshot.height,
+                          1023).cint
+  shminfo.shmaddr = cast[cstring](syscall(SHMAT, shminfo.shmid, 0, 0))
+  screenshot.data = shminfo.shmaddr
+  shminfo.readOnly = 0
+
+  let err = XShmAttach(display, addr shminfo)
+  echo "Status of XShmAttach call = ", err
+  discard XSync(display, 0)
+
+  discard XShmGetImage(display, DefaultRootWindow(display), screenshot, 0.cint, 0.cint, AllPlanes);
+
   var win = XCreateWindow(
     display, root,
-    0, 0, screenshot.width.cuint, screenshot.height.cuint, 0,
+    0, 0, attributes.width.cuint, attributes.height.cuint, 0,
     vi.depth, InputOutput, vi.visual,
     CWColormap or CWEventMask, addr swa)
 
@@ -388,6 +419,18 @@ proc main() =
 
     glXSwapBuffers(display, win)
     glFinish()
+
+    discard XShmGetImage(display, DefaultRootWindow(display), screenshot, 0.cint, 0.cint, AllPlanes);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_RGB.GLint,
+                 screenshot.width,
+                 screenshot.height,
+                 0,
+                 # TODO(#13): the texture format is hardcoded
+                 GL_BGRA,
+                 GL_UNSIGNED_BYTE,
+                 screenshot.data)
 
     when defined(live):
       screenshot = XGetSubImage(display, root,
