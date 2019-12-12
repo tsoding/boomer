@@ -2,7 +2,29 @@ import x11/xlib, x11/x, x11/xutil
 
 when defined(mitshm):
   import x11/xshm
-  import syscall
+
+  # Stolen from https://github.com/def-/nim-syscall
+  when defined(amd64):
+    type Number = enum
+      SHMGET = 29
+      SHMAT = 30
+      SHMCTL = 31
+      SHMDT = 67
+
+    proc syscall*(n: Number, a1: any): clong {.inline.} =
+      {.emit: """asm volatile(
+        "syscall" : "=a"(`result`)
+                  : "a"((long)`n`), "D"((long)`a1`)
+                  : "memory", "r11", "rcx", "cc");""".}
+
+    proc syscall*(n: Number, a1, a2, a3: any): clong {.inline.} =
+      {.emit: """asm volatile(
+        "syscall" : "=a"(`result`)
+                  : "a"((long)`n`), "D"((long)`a1`), "S"((long)`a2`),
+                     "d"((long)`a3`)
+                  : "memory", "r11", "rcx", "cc");""".}
+  else:
+    {.error: "Supported only Linux x86_64. Feel free to submit a PR to https://github.com/tsoding/boomer to fix it.".}
 
   const
     IPC_PRIVATE = 0

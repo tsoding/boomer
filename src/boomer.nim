@@ -7,7 +7,6 @@ import config
 import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr, x11/xshm
 import opengl, opengl/glx
 import la
-import syscall
 
 type Shader = tuple[path, content: string]
 
