@@ -205,11 +205,7 @@ proc main() =
 
   var shaderProgram = newShaderProgram(vertexShader, fragmentShader)
 
-  var screenshot =
-    when defined(mitshm):
-      newMitshmScreenshot(display)
-    else:
-      newDefaultScreenshot(display)
+  var screenshot = newScreenshot(display)
   defer: screenshot.destroy(display)
 
   let w = screenshot.image.width.float32
