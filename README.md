@@ -66,6 +66,9 @@ $ nix-env -iA nixos.boomer
 - https://stackoverflow.com/questions/24988164/c-fast-screenshots-in-linux-for-use-with-opencv
 - https://github.com/lolilolicon/xrectsel
 - https://github.com/naelstrof/slop
+- https://www.x.org/releases/X11R7.7/doc/xextproto/shm.html
+- http://netpbm.sourceforge.net/doc/ppm.html
+- https://github.com/def-/nim-syscall
 
 ## Support
 
