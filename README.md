@@ -45,6 +45,9 @@ For a faster Live Update feature based on MIT-SHM X11 extension use `-d:mitshm`:
 $ nimble build -d:live -d:mitshm
 ```
 
+The MIT-SHM support would probably not work for you until
+[nim-lang/x11#31](https://github.com/nim-lang/x11/pull/31) is merged.
+
 The feature is really unstable and experimental, so use it at your own risk.
 
 ## NixOS Overlay
