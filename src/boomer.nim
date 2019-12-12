@@ -6,7 +6,6 @@ import config
 
 import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr, x11/xshm
 import opengl, opengl/glx
-import math
 import la
 import syscall
 
@@ -29,13 +28,13 @@ when defined(developer):
   var
     vertexShader = readShader "vert.glsl"
     fragmentShader = readShader "frag.glsl"
+
+  proc reloadShader(shader: var Shader) =
+    shader.content = readFile shader.path
 else:
   const
     vertexShader = readShader "vert.glsl"
     fragmentShader = readShader "frag.glsl"
-
-proc reloadShader(shader: var Shader) =
-  shader.content = readFile shader.path
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
@@ -135,11 +134,6 @@ proc main() =
 
   echo "Using config: ", config
 
-  let customVertexShaderPath = boomerDir / "vert.glsl"
-  let customFragmentShaderPath = boomerDir / "frag.glsl"
-
-  # Fetching pixel data from X
-
   var display = XOpenDisplay(nil)
   if display == nil:
     quit "Failed to open display"
@@ -197,7 +191,7 @@ proc main() =
   shminfo.shmid = syscall(SHMGET,
                           IPC_PRIVATE,
                           screenshot.bytes_per_line * screenshot.height,
-                          1023).cint
+                          IPC_CREAT or 0o777).cint
   shminfo.shmaddr = cast[cstring](syscall(SHMAT, shminfo.shmid, 0, 0))
   screenshot.data = shminfo.shmaddr
   shminfo.readOnly = 0
@@ -451,5 +445,10 @@ proc main() =
                    GL_BGRA,
                    GL_UNSIGNED_BYTE,
                    screenshot.data)
+
+  discard XShmDetach(display, addr shminfo)
+  discard XDestroyImage(screenshot)
+  discard syscall(SHMDT, shminfo.shmaddr)
+  discard syscall(SHMCTL, shminfo.shmid, IPC_RMID, 0)
 
 main()
