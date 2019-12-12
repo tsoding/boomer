@@ -78,7 +78,7 @@ proc refresh*(screenshot: var Screenshot, display: PDisplay) =
       screenshot.image,
       0, 0)
 
-proc destroy*(screenshot: var Screenshot, display: PDisplay) =
+proc destroy*(screenshot: Screenshot, display: PDisplay) =
   when defined(mitshm):
     discard XSync(display, 0)
     discard XShmDetach(display, screenshot.shminfo)
