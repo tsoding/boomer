@@ -39,6 +39,15 @@ See issue [#26]. For an experimental Live Update feature compile the application
 $ nimble build -d:live
 ```
 
+For a faster Live Update feature based on MIT-SHM X11 extension use `-d:mitshm`:
+
+```console
+$ nimble build -d:live -d:mitshm
+```
+
+The MIT-SHM support would probably not work for you until
+[nim-lang/x11#31](https://github.com/nim-lang/x11/pull/31) is merged.
+
 The feature is really unstable and experimental, so use it at your own risk.
 
 ## NixOS Overlay
@@ -60,6 +69,9 @@ $ nix-env -iA nixos.boomer
 - https://stackoverflow.com/questions/24988164/c-fast-screenshots-in-linux-for-use-with-opencv
 - https://github.com/lolilolicon/xrectsel
 - https://github.com/naelstrof/slop
+- https://www.x.org/releases/X11R7.7/doc/xextproto/shm.html
+- http://netpbm.sourceforge.net/doc/ppm.html
+- https://github.com/def-/nim-syscall
 
 ## Support
 

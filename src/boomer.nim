@@ -1,12 +1,11 @@
 import os
 
 import navigation
-import image
+import screenshot
 import config
 
-import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr
+import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr, x11/xshm
 import opengl, opengl/glx
-import math
 import la
 
 type Shader = tuple[path, content: string]
@@ -23,13 +22,13 @@ when defined(developer):
   var
     vertexShader = readShader "vert.glsl"
     fragmentShader = readShader "frag.glsl"
+
+  proc reloadShader(shader: var Shader) =
+    shader.content = readFile shader.path
 else:
   const
     vertexShader = readShader "vert.glsl"
     fragmentShader = readShader "frag.glsl"
-
-proc reloadShader(shader: var Shader) =
-  shader.content = readFile shader.path
 
 proc newShader(shader: Shader, kind: GLenum): GLuint =
   result = glCreateShader(kind)
@@ -92,7 +91,7 @@ proc update(flashlight: var Flashlight, dt: float32) =
   else:
     flashlight.shadow = max(flashlight.shadow - 6.0 * dt, 0.0)
 
-proc draw(screenshot: Image, camera: Camera, shader, vao, texture: GLuint,
+proc draw(screenshot: PXImage, camera: Camera, shader, vao, texture: GLuint,
           windowSize: Vec2f, mouse: Mouse, flashlight: Flashlight) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
@@ -129,11 +128,6 @@ proc main() =
 
   echo "Using config: ", config
 
-  let customVertexShaderPath = boomerDir / "vert.glsl"
-  let customFragmentShaderPath = boomerDir / "frag.glsl"
-
-  # Fetching pixel data from X
-
   var display = XOpenDisplay(nil)
   if display == nil:
     quit "Failed to open display"
@@ -145,9 +139,6 @@ proc main() =
   var screenConfig = XRRGetScreenInfo(display, root)
   let rate = XRRConfigCurrentRate(screenConfig)
   echo "Screen rate: ", rate
-
-  var screenshot = takeScreenshot(display, root)
-  assert screenshot.bits_per_pixel == 32
 
   let screen = XDefaultScreen(display)
   var glxMajor, glxMinor: int
@@ -170,6 +161,7 @@ proc main() =
   if vi == nil:
     quit "No appropriate visual found"
 
+
   echo "Visual ", vi.visualid, " selected"
   var swa: TXSetWindowAttributes
   swa.colormap = XCreateColormap(display, root,
@@ -177,9 +169,15 @@ proc main() =
   swa.event_mask = ButtonPressMask or ButtonReleaseMask or KeyPressMask or
                    PointerMotionMask or ExposureMask or ClientMessage
 
+  var attributes: TXWindowAttributes
+  discard XGetWindowAttributes(
+    display,
+    DefaultRootWindow(display),
+    addr attributes)
+
   var win = XCreateWindow(
     display, root,
-    0, 0, screenshot.width.cuint, screenshot.height.cuint, 0,
+    0, 0, attributes.width.cuint, attributes.height.cuint, 0,
     vi.depth, InputOutput, vi.visual,
     CWColormap or CWEventMask, addr swa)
 
@@ -206,8 +204,11 @@ proc main() =
 
   var shaderProgram = newShaderProgram(vertexShader, fragmentShader)
 
-  let w = screenshot.width.float32
-  let h = screenshot.height.float32
+  var screenshot = newScreenshot(display)
+  defer: screenshot.destroy(display)
+
+  let w = screenshot.image.width.float32
+  let h = screenshot.image.height.float32
   var
     vao, vbo, ebo: GLuint
     vertices = [
@@ -254,13 +255,13 @@ proc main() =
   glTexImage2D(GL_TEXTURE_2D,
                0,
                GL_RGB.GLint,
-               screenshot.width,
-               screenshot.height,
+               screenshot.image.width,
+               screenshot.image.height,
                0,
                # TODO(#13): the texture format is hardcoded
                GL_BGRA,
                GL_UNSIGNED_BYTE,
-               screenshot.data)
+               screenshot.image.data)
   glGenerateMipmap(GL_TEXTURE_2D)
 
   glUniform1i(glGetUniformLocation(shaderProgram, "tex".cstring), 0)
@@ -378,35 +379,29 @@ proc main() =
       else:
         discard
 
-    camera.update(config, dt, mouse, screenshot,
+    camera.update(config, dt, mouse, screenshot.image,
                   vec2(wa.width.float32, wa.height.float32))
     flashlight.update(dt)
 
-    screenshot.draw(camera, shaderProgram, vao, texture,
-                    vec2(wa.width.float32, wa.height.float32),
-                    mouse, flashlight)
+    screenshot.image.draw(camera, shaderProgram, vao, texture,
+                          vec2(wa.width.float32, wa.height.float32),
+                          mouse, flashlight)
 
     glXSwapBuffers(display, win)
     glFinish()
 
     when defined(live):
-      screenshot = XGetSubImage(display, root,
-                                0, 0,
-                                screenshot.width.cuint,
-                                screenshot.height.cuint,
-                                AllPlanes,
-                                ZPixmap,
-                                screenshot,
-                                0, 0)
+      screenshot.refresh(display)
       glTexImage2D(GL_TEXTURE_2D,
                    0,
                    GL_RGB.GLint,
-                   screenshot.width,
-                   screenshot.height,
+                   screenshot.image.width,
+                   screenshot.image.height,
                    0,
                    # TODO(#13): the texture format is hardcoded
                    GL_BGRA,
                    GL_UNSIGNED_BYTE,
-                   screenshot.data)
+                   screenshot.image.data)
+  discard XSync(display, 0)
 
 main()
