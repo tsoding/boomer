@@ -1,6 +1,7 @@
+import x11/xlib
+
 import config
 import la
-import image
 
 const VELOCITY_THRESHOLD = 15.0
 
@@ -19,8 +20,7 @@ type Camera* = object
 proc world*(camera: Camera, v: Vec2f): Vec2f =
   v / camera.scale
 
-proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image: Image,
-             windowSize: Vec2f) =
+proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image: PXImage, windowSize: Vec2f) =
   if abs(camera.deltaScale) > 0.5:
     let p0 = (camera.scalePivot - (windowSize * 0.5)) / camera.scale
     camera.scale = max(camera.scale + camera.delta_scale * dt, 0.01)

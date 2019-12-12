@@ -1,7 +1,7 @@
 import os
 
 import navigation
-import image
+import screenshot
 import config
 
 import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr, x11/xshm
@@ -10,11 +10,6 @@ import la
 import syscall
 
 type Shader = tuple[path, content: string]
-
-const
-  IPC_PRIVATE = 0
-  IPC_CREAT = 512
-  IPC_RMID = 0
 
 proc readShader(file: string): Shader =
   when nimvm:
@@ -97,7 +92,7 @@ proc update(flashlight: var Flashlight, dt: float32) =
   else:
     flashlight.shadow = max(flashlight.shadow - 6.0 * dt, 0.0)
 
-proc draw(screenshot: Image, camera: Camera, shader, vao, texture: GLuint,
+proc draw(screenshot: PXImage, camera: Camera, shader, vao, texture: GLuint,
           windowSize: Vec2f, mouse: Mouse, flashlight: Flashlight) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
@@ -181,27 +176,6 @@ proc main() =
     DefaultRootWindow(display),
     addr attributes)
 
-  var shminfo: TXShmSegmentInfo
-  var screenshot = XShmCreateImage(
-    display, vi.visual, 24.cuint, ZPixmap, nil,
-    addr shminfo,
-    attributes.width.cuint,
-    attributes.height.cuint)
-
-  shminfo.shmid = syscall(SHMGET,
-                          IPC_PRIVATE,
-                          screenshot.bytes_per_line * screenshot.height,
-                          IPC_CREAT or 0o777).cint
-  shminfo.shmaddr = cast[cstring](syscall(SHMAT, shminfo.shmid, 0, 0))
-  screenshot.data = shminfo.shmaddr
-  shminfo.readOnly = 0
-
-  let err = XShmAttach(display, addr shminfo)
-  echo "Status of XShmAttach call = ", err
-  discard XSync(display, 0)
-
-  discard XShmGetImage(display, DefaultRootWindow(display), screenshot, 0.cint, 0.cint, AllPlanes);
-
   var win = XCreateWindow(
     display, root,
     0, 0, attributes.width.cuint, attributes.height.cuint, 0,
@@ -231,8 +205,15 @@ proc main() =
 
   var shaderProgram = newShaderProgram(vertexShader, fragmentShader)
 
-  let w = screenshot.width.float32
-  let h = screenshot.height.float32
+  var screenshot =
+    when defined(mitshm):
+      newMitshmScreenshot(display)
+    else:
+      newDefaultScreenshot(display)
+  defer: screenshot.destroy(display)
+
+  let w = screenshot.image.width.float32
+  let h = screenshot.image.height.float32
   var
     vao, vbo, ebo: GLuint
     vertices = [
@@ -279,13 +260,13 @@ proc main() =
   glTexImage2D(GL_TEXTURE_2D,
                0,
                GL_RGB.GLint,
-               screenshot.width,
-               screenshot.height,
+               screenshot.image.width,
+               screenshot.image.height,
                0,
                # TODO(#13): the texture format is hardcoded
                GL_BGRA,
                GL_UNSIGNED_BYTE,
-               screenshot.data)
+               screenshot.image.data)
   glGenerateMipmap(GL_TEXTURE_2D)
 
   glUniform1i(glGetUniformLocation(shaderProgram, "tex".cstring), 0)
@@ -403,52 +384,29 @@ proc main() =
       else:
         discard
 
-    camera.update(config, dt, mouse, screenshot,
+    camera.update(config, dt, mouse, screenshot.image,
                   vec2(wa.width.float32, wa.height.float32))
     flashlight.update(dt)
 
-    screenshot.draw(camera, shaderProgram, vao, texture,
-                    vec2(wa.width.float32, wa.height.float32),
-                    mouse, flashlight)
+    screenshot.image.draw(camera, shaderProgram, vao, texture,
+                          vec2(wa.width.float32, wa.height.float32),
+                          mouse, flashlight)
 
     glXSwapBuffers(display, win)
     glFinish()
 
-    discard XShmGetImage(display, DefaultRootWindow(display), screenshot, 0.cint, 0.cint, AllPlanes);
-    glTexImage2D(GL_TEXTURE_2D,
-                 0,
-                 GL_RGB.GLint,
-                 screenshot.width,
-                 screenshot.height,
-                 0,
-                 # TODO(#13): the texture format is hardcoded
-                 GL_BGRA,
-                 GL_UNSIGNED_BYTE,
-                 screenshot.data)
-
     when defined(live):
-      screenshot = XGetSubImage(display, root,
-                                0, 0,
-                                screenshot.width.cuint,
-                                screenshot.height.cuint,
-                                AllPlanes,
-                                ZPixmap,
-                                screenshot,
-                                0, 0)
+      screenshot.refresh(display)
       glTexImage2D(GL_TEXTURE_2D,
                    0,
                    GL_RGB.GLint,
-                   screenshot.width,
-                   screenshot.height,
+                   screenshot.image.width,
+                   screenshot.image.height,
                    0,
                    # TODO(#13): the texture format is hardcoded
                    GL_BGRA,
                    GL_UNSIGNED_BYTE,
-                   screenshot.data)
-
-  discard XShmDetach(display, addr shminfo)
-  discard XDestroyImage(screenshot)
-  discard syscall(SHMDT, shminfo.shmaddr)
-  discard syscall(SHMCTL, shminfo.shmid, IPC_RMID, 0)
+                   screenshot.image.data)
+  discard XSync(display, 0)
 
 main()

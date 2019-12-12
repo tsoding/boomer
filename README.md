@@ -39,6 +39,12 @@ See issue [#26]. For an experimental Live Update feature compile the application
 $ nimble build -d:live
 ```
 
+For a faster Live Update feature based on MIT-SHM X11 extension use `-d:mitshm`:
+
+```console
+$ nimble build -d:live -d:mitshm
+```
+
 The feature is really unstable and experimental, so use it at your own risk.
 
 ## NixOS Overlay
