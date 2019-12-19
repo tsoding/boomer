@@ -166,20 +166,22 @@ proc main() =
   var swa: TXSetWindowAttributes
   swa.colormap = XCreateColormap(display, root,
                                  vi.visual, AllocNone)
-  swa.event_mask = ButtonPressMask or ButtonReleaseMask or KeyPressMask or
+  swa.event_mask = ButtonPressMask or ButtonReleaseMask or
+                   KeyPressMask or KeyReleaseMask or
                    PointerMotionMask or ExposureMask or ClientMessage
+  swa.override_redirect = 1
+  swa.save_under = 1
 
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(
     display,
     DefaultRootWindow(display),
     addr attributes)
-
   var win = XCreateWindow(
     display, root,
     0, 0, attributes.width.cuint, attributes.height.cuint, 0,
     vi.depth, InputOutput, vi.visual,
-    CWColormap or CWEventMask, addr swa)
+    CWColormap or CWEventMask or CWOverrideRedirect or CWSaveUnder, addr swa)
 
   discard XMapWindow(display, win)
 
@@ -281,8 +283,12 @@ proc main() =
       isEnabled: false,
       radius: 200.0)
 
+
   let dt = 1.0 / rate.float
   while not quitting:
+    # TODO(#78): Is there a better solution to keep the focus always on the window?
+    discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
+
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
     glViewport(0, 0, wa.width, wa.height)
