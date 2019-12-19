@@ -283,10 +283,12 @@ proc main() =
       isEnabled: false,
       radius: 200.0)
 
-  discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
 
   let dt = 1.0 / rate.float
   while not quitting:
+    # TODO: Is there a better solution to keep the focus always on the window?
+    discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
+
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
     glViewport(0, 0, wa.width, wa.height)
