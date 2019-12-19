@@ -286,7 +286,7 @@ proc main() =
 
   let dt = 1.0 / rate.float
   while not quitting:
-    # TODO: Is there a better solution to keep the focus always on the window?
+    # TODO(#78): Is there a better solution to keep the focus always on the window?
     discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
 
     var wa: TXWindowAttributes
