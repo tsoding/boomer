@@ -81,12 +81,14 @@ proc newScreenshot*(display: PDisplay, window: TWindow): Screenshot =
 
 proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
   when defined(mitshm):
+    # TODO: MITSHM live update does not support window resizing
     discard XShmGetImage(
       display,
       window, screenshot.image,
       0.cint, 0.cint,
       AllPlanes)
   else:
+    # TODO: XGetImage live update does not support window resizing
     screenshot.image = XGetSubImage(
       display, window,
       0, 0,
