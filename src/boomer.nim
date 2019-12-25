@@ -115,6 +115,19 @@ proc draw(screenshot: PXImage, camera: Camera, shader, vao, texture: GLuint,
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
 
+proc getCursorPosition(display: PDisplay): Vec2f =
+  var root, child: TWindow
+  var root_x, root_y, win_x, win_y: cint
+  var mask: cuint
+  discard XQueryPointer(
+    display, DefaultRootWindow(display),
+    addr root, addr child,
+    addr root_x, addr root_y,
+    addr winX, addr winY,
+    addr mask);
+  result.x = root_x.float32
+  result.y = root_y.float32
+
 proc main() =
   var config = defaultConfig
   let
@@ -278,7 +291,10 @@ proc main() =
   var
     quitting = false
     camera = Camera(scale: 1.0)
-    mouse: Mouse
+    mouse: Mouse =
+      block:
+        let pos = getCursorPosition(display)
+        Mouse(curr: pos, prev: pos)
     flashlight = Flashlight(
       isEnabled: false,
       radius: 200.0)
