@@ -182,8 +182,9 @@ proc main() =
   swa.event_mask = ButtonPressMask or ButtonReleaseMask or
                    KeyPressMask or KeyReleaseMask or
                    PointerMotionMask or ExposureMask or ClientMessage
-  swa.override_redirect = 1
-  swa.save_under = 1
+  when not defined(windowed):
+    swa.override_redirect = 1
+    swa.save_under = 1
 
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(
@@ -303,7 +304,8 @@ proc main() =
   let dt = 1.0 / rate.float
   while not quitting:
     # TODO(#78): Is there a better solution to keep the focus always on the window?
-    discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
+    when not defined(windowed):
+      discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
 
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)

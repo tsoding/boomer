@@ -39,10 +39,16 @@ See issue [#26]. For an experimental Live Update feature compile the application
 $ nimble build -d:live
 ```
 
+Live update feature makes more sense right now in the windowed mode to enabled windowed mode use the following flags:
+
+```console
+$ nimble build -d:live -d:windowed
+```
+
 For a faster Live Update feature based on MIT-SHM X11 extension use `-d:mitshm`:
 
 ```console
-$ nimble build -d:live -d:mitshm
+$ nimble build -d:live -d:windowed -d:mitshm
 ```
 
 The MIT-SHM support would probably not work for you until
