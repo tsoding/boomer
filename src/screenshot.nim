@@ -88,7 +88,7 @@ proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
       0.cint, 0.cint,
       AllPlanes)
   else:
-    # TODO: XGetImage live update does not support window resizing
+    # TODO(#84): XGetImage live update does not support window resizing
     screenshot.image = XGetSubImage(
       display, window,
       0, 0,
