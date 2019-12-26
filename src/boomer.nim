@@ -185,8 +185,12 @@ proc main() =
   defer:
     discard XCloseDisplay(display)
 
-  echo "Please select window:"
-  var trackingWindow = selectWindow(display)
+
+  when defined(select):
+    echo "Please select window:"
+    var trackingWindow = selectWindow(display)
+  else:
+    var trackingWindow = DefaultRootWindow(display)
 
   var screenConfig = XRRGetScreenInfo(display, DefaultRootWindow(display))
   let rate = XRRConfigCurrentRate(screenConfig)
