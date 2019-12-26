@@ -64,6 +64,7 @@ $ nix-env -iA nixos.boomer
 - https://www.x.org/releases/X11R7.7/doc/xextproto/shm.html
 - http://netpbm.sourceforge.net/doc/ppm.html
 - https://github.com/def-/nim-syscall
+- https://github.com/dreamer/scrot
 
 ## Support
 
