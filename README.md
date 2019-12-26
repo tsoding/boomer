@@ -31,24 +31,16 @@ $ nimble build -d:developer
 This will enable:
 - Reloading the shaders with `Ctrl+R`
 
-## Experimental Live Update
+## Experimental Features Compilation Flags
 
-See issue [#26]. For an experimental Live Update feature compile the application with the following flags:
+Experimental or unstable features can be enabled by passing the following flags to `nimble build` command:
 
-```console
-$ nimble build -d:live
-```
-
-For a faster Live Update feature based on MIT-SHM X11 extension use `-d:mitshm`:
-
-```console
-$ nimble build -d:live -d:mitshm
-```
-
-The MIT-SHM support would probably not work for you until
-[nim-lang/x11#31](https://github.com/nim-lang/x11/pull/31) is merged.
-
-The feature is really unstable and experimental, so use it at your own risk.
+| Flag          | Description                                                                                                                    |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------|
+| `-d:live`     | Live image update. See issue [#26].                                                                                            |
+| `-d:mitshm`   | Enables fater Live image update using MIT-SHM X11 extension. Should be used along with `-d:live` to have an effect             |
+| `-d:windowed` | Run boomer in windowed mode instead of fullscreen.                                                                             |
+| `-d:select`   | Application lets the user to click on te window to "track" and it will track that specific window instead of the whole screen. |
 
 ## NixOS Overlay
 

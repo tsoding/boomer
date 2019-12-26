@@ -36,10 +36,9 @@ type Screenshot* = object
   when defined(mitshm):
     shminfo*: PXShmSegmentInfo
 
-proc newScreenshot*(display: PDisplay): Screenshot =
-  var root = DefaultRootWindow(display)
+proc newScreenshot*(display: PDisplay, window: TWindow): Screenshot =
   var attributes: TXWindowAttributes
-  discard XGetWindowAttributes(display, root, addr attributes)
+  discard XGetWindowAttributes(display, window, addr attributes)
 
   when defined(mitshm):
     result.shminfo = cast[PXShmSegmentInfo](
@@ -70,28 +69,28 @@ proc newScreenshot*(display: PDisplay): Screenshot =
 
     discard XShmAttach(display, result.shminfo)
     discard XShmGetImage(
-      display, root, result.image, 0.cint, 0.cint, AllPlanes)
+      display, window, result.image, 0.cint, 0.cint, AllPlanes)
   else:
     result.image = XGetImage(
-      display, root,
+      display, window,
       0, 0,
       attributes.width.cuint,
       attributes.height.cuint,
       AllPlanes,
       ZPixmap)
 
-proc refresh*(screenshot: var Screenshot, display: PDisplay) =
-  var root = DefaultRootWindow(display)
-
+proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
   when defined(mitshm):
+    # TODO(#83): MITSHM live update does not support window resizing
     discard XShmGetImage(
       display,
-      root, screenshot.image,
+      window, screenshot.image,
       0.cint, 0.cint,
       AllPlanes)
   else:
+    # TODO(#84): XGetImage live update does not support window resizing
     screenshot.image = XGetSubImage(
-      display, root,
+      display, window,
       0, 0,
       screenshot.image.width.cuint,
       screenshot.image.height.cuint,

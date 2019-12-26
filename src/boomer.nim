@@ -4,7 +4,13 @@ import navigation
 import screenshot
 import config
 
-import x11/xlib, x11/x, x11/xutil, x11/keysym, x11/xrandr, x11/xshm
+import x11/xlib,
+       x11/x,
+       x11/xutil,
+       x11/keysym,
+       x11/xrandr,
+       x11/xshm,
+       x11/cursorfont
 import opengl, opengl/glx
 import la
 
@@ -128,6 +134,38 @@ proc getCursorPosition(display: PDisplay): Vec2f =
   result.x = root_x.float32
   result.y = root_y.float32
 
+proc selectWindow(display: PDisplay): TWindow =
+  var cursor = XCreateFontCursor(display, XC_crosshair)
+  defer: discard XFreeCursor(display, cursor)
+
+  var root = DefaultRootWindow(display)
+  discard XGrabPointer(display, root, 0,
+                       ButtonMotionMask or
+                       ButtonPressMask or
+                       ButtonReleaseMask,
+                       GrabModeAsync, GrabModeAsync,
+                       root, cursor,
+                       CurrentTime)
+  defer: discard XUngrabPointer(display, CurrentTime)
+
+  discard XGrabKeyboard(display, root, 0,
+                        GrabModeAsync, GrabModeAsync,
+                        CurrentTime)
+  defer: discard XUngrabKeyboard(display, CurrentTime)
+
+  var event: TXEvent
+  while true:
+    discard XNextEvent(display, addr event)
+    case event.theType
+    of ButtonPress:
+      return event.xbutton.subwindow
+    of KeyPress:
+      return root
+    else:
+      discard
+
+  return root
+
 proc main() =
   var config = defaultConfig
   let
@@ -147,9 +185,14 @@ proc main() =
   defer:
     discard XCloseDisplay(display)
 
-  var root = DefaultRootWindow(display)
 
-  var screenConfig = XRRGetScreenInfo(display, root)
+  when defined(select):
+    echo "Please select window:"
+    var trackingWindow = selectWindow(display)
+  else:
+    var trackingWindow = DefaultRootWindow(display)
+
+  var screenConfig = XRRGetScreenInfo(display, DefaultRootWindow(display))
   let rate = XRRConfigCurrentRate(screenConfig)
   echo "Screen rate: ", rate
 
@@ -177,13 +220,14 @@ proc main() =
 
   echo "Visual ", vi.visualid, " selected"
   var swa: TXSetWindowAttributes
-  swa.colormap = XCreateColormap(display, root,
+  swa.colormap = XCreateColormap(display, DefaultRootWindow(display),
                                  vi.visual, AllocNone)
   swa.event_mask = ButtonPressMask or ButtonReleaseMask or
                    KeyPressMask or KeyReleaseMask or
                    PointerMotionMask or ExposureMask or ClientMessage
-  swa.override_redirect = 1
-  swa.save_under = 1
+  when not defined(windowed):
+    swa.override_redirect = 1
+    swa.save_under = 1
 
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(
@@ -191,7 +235,7 @@ proc main() =
     DefaultRootWindow(display),
     addr attributes)
   var win = XCreateWindow(
-    display, root,
+    display, DefaultRootWindow(display),
     0, 0, attributes.width.cuint, attributes.height.cuint, 0,
     vi.depth, InputOutput, vi.visual,
     CWColormap or CWEventMask or CWOverrideRedirect or CWSaveUnder, addr swa)
@@ -219,7 +263,7 @@ proc main() =
 
   var shaderProgram = newShaderProgram(vertexShader, fragmentShader)
 
-  var screenshot = newScreenshot(display)
+  var screenshot = newScreenshot(display, trackingWindow)
   defer: screenshot.destroy(display)
 
   let w = screenshot.image.width.float32
@@ -303,7 +347,8 @@ proc main() =
   let dt = 1.0 / rate.float
   while not quitting:
     # TODO(#78): Is there a better solution to keep the focus always on the window?
-    discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
+    when not defined(windowed):
+      discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
 
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
@@ -413,7 +458,7 @@ proc main() =
     glFinish()
 
     when defined(live):
-      screenshot.refresh(display)
+      screenshot.refresh(display, trackingWindow)
       glTexImage2D(GL_TEXTURE_2D,
                    0,
                    GL_RGB.GLint,
