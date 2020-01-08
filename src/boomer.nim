@@ -192,7 +192,7 @@ proc main() =
         i += 2
       of "-h", "--help":
         usageQuit()
-      # TODO: there is no --version flag
+      # TODO(#96): there is no --version flag
       else:
         echo "Unknown flag `$#`" % [arg]
         usageQuit()
