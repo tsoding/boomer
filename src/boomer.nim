@@ -178,20 +178,22 @@ proc main() =
   var delaySec = 0.0
   block:
     proc usageQuit() =
-      quit "Usage: boomer [-d <delay-in-sec: float>] [-h]"
+      quit "Usage: boomer [-d|--delay <delay-in-sec: float>] [-h|--help]"
     var i = 1
     while i <= paramCount():
-      case paramStr(i)
-      of "-d":
+      let arg = paramStr(i)
+      case arg
+      of "-d", "--delay":
         if i + 1 > paramCount():
-          echo "No value is provided for -d"
+          echo "No value is provided for $#" % [arg]
           usageQuit()
-        delaySec = parseFloat($paramStr(i + 1))
+        delaySec = parseFloat(paramStr(i + 1))
         i += 2
-      of "-h":
+      of "-h", "--help":
         usageQuit()
+      # TODO: there is no --version flag
       else:
-        echo "Unknown flag `$#`" % [paramStr(i)]
+        echo "Unknown flag `$#`" % [arg]
         usageQuit()
   sleep(floor(delaySec * 1000).int)
 
