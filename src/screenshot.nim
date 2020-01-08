@@ -80,6 +80,9 @@ proc newScreenshot*(display: PDisplay, window: TWindow): Screenshot =
       ZPixmap)
 
 proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
+  var attributes: TXWindowAttributes
+  discard XGetWindowAttributes(display, window, addr attributes)
+
   when defined(mitshm):
     # TODO(#83): MITSHM live update does not support window resizing
     discard XShmGetImage(
@@ -88,8 +91,8 @@ proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
       0.cint, 0.cint,
       AllPlanes)
   else:
-    # TODO(#84): XGetImage live update does not support window resizing
-    screenshot.image = XGetSubImage(
+    # TODO(#88): Aspect ratio of texture is not updated
+    let refreshedImage = XGetSubImage(
       display, window,
       0, 0,
       screenshot.image.width.cuint,
@@ -98,6 +101,22 @@ proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
       ZPixmap,
       screenshot.image,
       0, 0)
+    if refreshedImage == nil or
+       refreshedImage.width != attributes.width or
+       refreshedImage.height != attributes.height:
+      let newImage = XGetImage(
+        display, window,
+        0, 0,
+        attributes.width.cuint,
+        attributes.height.cuint,
+        AllPlanes,
+        ZPixmap)
+
+      if newImage != nil:
+        discard XDestroyImage(screenshot.image)
+        screenshot.image = newImage
+    else:
+      screenshot.image = refreshedImage
 
 proc destroy*(screenshot: Screenshot, display: PDisplay) =
   when defined(mitshm):
