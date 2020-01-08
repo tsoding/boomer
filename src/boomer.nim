@@ -466,6 +466,25 @@ proc main() =
 
     when defined(live):
       screenshot.refresh(display, trackingWindow)
+      # TODO: don't update the vbo on screenshot refresh
+      # I'm pretty sure we can avoid that if we make independent from
+      # the size of the window as it was in the beginning. (I simply did
+      # not expect this use case back then Kappa)
+      var
+        w = screenshot.image.width.float32
+        h = screenshot.image.height.float32
+        vertices = [
+          # Position                 Texture coords
+          [GLfloat    w,     0, 0.0, 1.0, 1.0], # Top right
+          [GLfloat    w,     h, 0.0, 1.0, 0.0], # Bottom right
+          [GLfloat    0,     h, 0.0, 0.0, 0.0], # Bottom left
+          [GLfloat    0,     0, 0.0, 0.0, 1.0]  # Top left
+        ]
+        indices = [GLuint(0), 1, 3,
+                   1,  2, 3]
+      glBindBuffer(GL_ARRAY_BUFFER, vbo)
+      glBufferData(GL_ARRAY_BUFFER, size = GLsizeiptr(sizeof(vertices)),
+                   addr vertices, GL_STATIC_DRAW)
       glTexImage2D(GL_TEXTURE_2D,
                    0,
                    GL_RGB.GLint,
