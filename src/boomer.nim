@@ -177,16 +177,22 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
 proc main() =
   var delaySec = 0.0
   block:
+    proc usageQuit() =
+      quit "Usage: boomer [-d <delay-in-sec: float>] [-h]"
     var i = 1
     while i <= paramCount():
       case paramStr(i)
       of "-d":
         if i + 1 > paramCount():
-          quit "No value is provided for -d"
+          echo "No value is provided for -d"
+          usageQuit()
         delaySec = parseFloat($paramStr(i + 1))
         i += 2
+      of "-h":
+        usageQuit()
       else:
-        quit "Unknown flag `$#`" % [paramStr(i)]
+        echo "Unknown flag `$#`" % [paramStr(i)]
+        usageQuit()
   sleep(floor(delaySec * 1000).int)
 
   var config = defaultConfig
