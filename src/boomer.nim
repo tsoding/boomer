@@ -166,6 +166,12 @@ proc selectWindow(display: PDisplay): TWindow =
 
   return root
 
+proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cdecl.} =
+  const CAPACITY = 256
+  var errorMessage: array[CAPACITY, char]
+  discard XGetErrorText(display, errorEvent.error_code.cint, addr errorMessage, CAPACITY)
+  echo "X ELEVEN ERROR: ", $(addr errorMessage)
+
 proc main() =
   var config = defaultConfig
   let
@@ -185,6 +191,7 @@ proc main() =
   defer:
     discard XCloseDisplay(display)
 
+  discard XSetErrorHandler(xElevenErrorHandler)
 
   when defined(select):
     echo "Please select window:"
