@@ -466,7 +466,7 @@ proc main() =
 
     when defined(live):
       screenshot.refresh(display, trackingWindow)
-      # TODO: don't update the vbo on screenshot refresh
+      # TODO(#90): don't update the vbo on screenshot refresh
       # I'm pretty sure we can avoid that if we make independent from
       # the size of the window as it was in the beginning. (I simply did
       # not expect this use case back then Kappa)
