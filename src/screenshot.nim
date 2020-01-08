@@ -79,17 +79,31 @@ proc newScreenshot*(display: PDisplay, window: TWindow): Screenshot =
       AllPlanes,
       ZPixmap)
 
+proc destroy*(screenshot: Screenshot, display: PDisplay) =
+  when defined(mitshm):
+    discard XSync(display, 0)
+    discard XShmDetach(display, screenshot.shminfo)
+    discard XDestroyImage(screenshot.image)
+    discard syscall(SHMDT, screenshot.shminfo.shmaddr)
+    discard syscall(SHMCTL, screenshot.shminfo.shmid, IPC_RMID, 0)
+    deallocShared(screenshot.shminfo)
+  else:
+    discard XDestroyImage(screenshot.image)
+
+# TODO: there is too much X11 error logging when the tracked live update window is resized
 proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(display, window, addr attributes)
 
   when defined(mitshm):
-    # TODO(#83): MITSHM live update does not support window resizing
-    discard XShmGetImage(
-      display,
-      window, screenshot.image,
-      0.cint, 0.cint,
-      AllPlanes)
+    if XShmGetImage(display,
+                    window, screenshot.image,
+                    0.cint, 0.cint,
+                    AllPlanes) == 0 or
+       attributes.width != screenshot.image.width or
+       attributes.height != screenshot.image.height:
+      screenshot.destroy(display)
+      screenshot = newScreenshot(display, window)
   else:
     # TODO(#88): Aspect ratio of texture is not updated
     let refreshedImage = XGetSubImage(
@@ -117,17 +131,6 @@ proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
         screenshot.image = newImage
     else:
       screenshot.image = refreshedImage
-
-proc destroy*(screenshot: Screenshot, display: PDisplay) =
-  when defined(mitshm):
-    discard XSync(display, 0)
-    discard XShmDetach(display, screenshot.shminfo)
-    discard XDestroyImage(screenshot.image)
-    discard syscall(SHMDT, screenshot.shminfo.shmaddr)
-    discard syscall(SHMCTL, screenshot.shminfo.shmid, IPC_RMID, 0)
-    deallocShared(screenshot.shminfo)
-  else:
-    discard XDestroyImage(screenshot.image)
 
 proc saveToPPM*(image: PXImage, filePath: string) =
   var f = open(filePath, fmWrite)
