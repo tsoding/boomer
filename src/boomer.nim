@@ -13,6 +13,8 @@ import x11/xlib,
        x11/cursorfont
 import opengl, opengl/glx
 import la
+import strutils
+import math
 
 type Shader = tuple[path, content: string]
 
@@ -173,6 +175,29 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
   echo "X ELEVEN ERROR: ", $(addr errorMessage)
 
 proc main() =
+  var delaySec = 0.0
+  # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
+  block:
+    proc usageQuit() =
+      quit "Usage: boomer [-d|--delay <delay-in-sec: float>] [-h|--help]"
+    var i = 1
+    while i <= paramCount():
+      let arg = paramStr(i)
+      case arg
+      of "-d", "--delay":
+        if i + 1 > paramCount():
+          echo "No value is provided for $#" % [arg]
+          usageQuit()
+        delaySec = parseFloat(paramStr(i + 1))
+        i += 2
+      of "-h", "--help":
+        usageQuit()
+      # TODO(#96): there is no --version flag
+      else:
+        echo "Unknown flag `$#`" % [arg]
+        usageQuit()
+  sleep(floor(delaySec * 1000).int)
+
   var config = defaultConfig
   let
     boomerDir = getConfigDir() / "boomer"
