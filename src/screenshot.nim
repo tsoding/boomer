@@ -91,7 +91,7 @@ proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
       0.cint, 0.cint,
       AllPlanes)
   else:
-    # TODO: Aspect ratio of texture is not updated
+    # TODO(#88): Aspect ratio of texture is not updated
     let refreshedImage = XGetSubImage(
       display, window,
       0, 0,
