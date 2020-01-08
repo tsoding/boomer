@@ -90,7 +90,7 @@ proc destroy*(screenshot: Screenshot, display: PDisplay) =
   else:
     discard XDestroyImage(screenshot.image)
 
-# TODO: there is too much X11 error logging when the tracked live update window is resized
+# TODO(#92): there is too much X11 error logging when the tracked live update window is resized
 proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(display, window, addr attributes)
