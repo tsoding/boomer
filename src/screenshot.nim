@@ -105,7 +105,6 @@ proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
       screenshot.destroy(display)
       screenshot = newScreenshot(display, window)
   else:
-    # TODO(#88): Aspect ratio of texture is not updated
     let refreshedImage = XGetSubImage(
       display, window,
       0, 0,
