@@ -13,6 +13,8 @@ import x11/xlib,
        x11/cursorfont
 import opengl, opengl/glx
 import la
+import strutils
+import math
 
 type Shader = tuple[path, content: string]
 
@@ -173,6 +175,20 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
   echo "X ELEVEN ERROR: ", $(addr errorMessage)
 
 proc main() =
+  var delaySec = 0.0
+  block:
+    var i = 1
+    while i <= paramCount():
+      case paramStr(i)
+      of "-d":
+        if i + 1 > paramCount():
+          quit "No value is provided for -d"
+        delaySec = parseFloat($paramStr(i + 1))
+        i += 2
+      else:
+        quit "Unknown flag `$#`" % [paramStr(i)]
+  sleep(floor(delaySec * 1000).int)
+
   var config = defaultConfig
   let
     boomerDir = getConfigDir() / "boomer"
