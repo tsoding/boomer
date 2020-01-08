@@ -176,6 +176,7 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
 
 proc main() =
   var delaySec = 0.0
+  # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
     proc usageQuit() =
       quit "Usage: boomer [-d|--delay <delay-in-sec: float>] [-h|--help]"
