@@ -19,8 +19,8 @@ in stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "tsoding";
     repo = "boomer";
-    rev = "c160a6046b3f57f9a99a0adffcf091a70025d288";
-    sha256 = "1xrhlp43hdgxzagm9f7cblh79pdll8yaxblh26x4znv3dvx59rj6";
+    rev = "9a410b326d505d9b996945fd056d4ca19f4f8f33";
+    sha256 = "1dd4wivj9vzawy7n5s0g38104pp760p4nr04kkpkszwdjh9pa9ql";
   };
   buildInputs = [ nim_1_0 libX11 libXrandr libGL ];
   buildPhase = ''
