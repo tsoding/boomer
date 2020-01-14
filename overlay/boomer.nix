@@ -15,7 +15,7 @@ let
   };
 in stdenv.mkDerivation rec {
   pname = "boomer";
-  version = "unstable-2019-12-19";
+  version = "unstable-2020-01-14";
   src = fetchFromGitHub {
     owner = "tsoding";
     repo = "boomer";
