@@ -15,6 +15,7 @@ import opengl, opengl/glx
 import la
 import strutils
 import math
+import options
 
 type Shader = tuple[path, content: string]
 
@@ -175,8 +176,11 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
   echo "X ELEVEN ERROR: ", $(addr errorMessage)
 
 proc main() =
+  let boomerDir = getConfigDir() / "boomer"
+  var configFile = boomerDir / "config"
   var windowed = false
   var delaySec = 0.0
+
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
     proc versionQuit() =
@@ -184,36 +188,76 @@ proc main() =
       quit "boomer-$#" % [hash[0 .. 7]]
     proc usageQuit() =
       quit """Usage: boomer [OPTIONS]
-  -d, --delay <seconds: float>  delay execution of the program by provided seconds
+  -d, --delay <seconds: float>  delay execution of the program by provided <seconds>
   -h, --help                    show this help and exit
+      --new-config [filepath]   generate a new default config at [filepath]
+  -c, --config <filepath>       use config at <filepath>
   -V, --version                 show the current version and exit
   -w, --windowed                windowed mode instead of fullscreen"""
     var i = 1
     while i <= paramCount():
       let arg = paramStr(i)
-      case arg
-      of "-d", "--delay":
+
+      template asParam(paramVar: untyped, body: untyped) =
         if i + 1 > paramCount():
           echo "No value is provided for $#" % [arg]
           usageQuit()
-        delaySec = parseFloat(paramStr(i + 1))
+        let paramVar = paramStr(i + 1)
+        body
         i += 2
-      of "-w", "--windowed":
-        windowed = true
+
+      template asFlag(body: untyped) =
+        body
         i += 1
+
+      template asOptionalParam(paramVar: untyped, body: untyped) =
+        let paramVar = block:
+          var resultVal = none(string)
+          if i + 1 <= paramCount():
+            let param = paramStr(i + 1)
+            if len(param) > 0 and param[0] != '-':
+              resultVal = some(param)
+          resultVal
+        body
+        if paramVar.isNone:
+          i += 1
+        else:
+          i += 2
+
+      case arg
+      of "-d", "--delay":
+        asParam(delayParam):
+          delaySec = parseFloat(delayParam)
+      of "-w", "--windowed":
+        asFlag():
+          windowed = true
       of "-h", "--help":
-        usageQuit()
+        asFlag():
+          usageQuit()
       of "-V", "--version":
-        versionQuit()
+        asFlag():
+          versionQuit()
+      of "--new-config":
+        asOptionalParam(configName):
+          let newConfigPath = configName.get(configFile)
+
+          createDir(newConfigPath.splitFile.dir)
+          if newConfigPath.existsFile:
+            stdout.write("File ", newConfigPath, " already exists. Replace it? [yn] ")
+            if stdin.readChar != 'y':
+              quit "Disaster prevented"
+
+          generateDefaultConfig(newConfigPath)
+          quit "Generated config at $#" % [newConfigPath]
+      of "-c", "--config":
+        asParam(configParam):
+          configFile = configParam
       else:
         echo "Unknown flag `$#`" % [arg]
         usageQuit()
   sleep(floor(delaySec * 1000).int)
 
   var config = defaultConfig
-  let
-    boomerDir = getConfigDir() / "boomer"
-    configFile = boomerDir / "config"
 
   if existsFile configFile:
     config = loadConfig(configFile)
