@@ -239,13 +239,16 @@ proc main() =
           versionQuit()
       of "--new-config":
         asOptionalParam(configName):
-          if configName.isNone:
-            createDir(boomerDir)
-            generateDefaultConfig(configFile)
-            quit "Generated config at $#" % [configFile]
-          else:
-            generateDefaultConfig(configName.get)
-            quit "Generated config at $#" % [configName.get]
+          let newConfigPath = configName.get(configFile)
+
+          createDir(newConfigPath.splitFile.dir)
+          if newConfigPath.existsFile:
+            stdout.write("File ", newConfigPath, " already exists. Replace it? [yn] ")
+            if stdin.readChar != 'y':
+              quit "Disaster prevented"
+
+          generateDefaultConfig(newConfigPath)
+          quit "Generated config at $#" % [newConfigPath]
       of "-c", "--config":
         asParam(configParam):
           configFile = configParam
