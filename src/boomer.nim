@@ -178,10 +178,14 @@ proc main() =
   var delaySec = 0.0
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
+    proc versionQuit() =
+      const hash = staticExec("git rev-parse HEAD")
+      quit "boomer-$#" % [hash[0 .. 7]]
     proc usageQuit() =
       quit """Usage: boomer [OPTIONS]
   -d, --delay <seconds: float>  delay execution of the program by provided seconds
-  -h, --help                    show this help and exit"""
+  -h, --help                    show this help and exit
+  -V, --version                 show the current version and exit"""
     var i = 1
     while i <= paramCount():
       let arg = paramStr(i)
@@ -194,7 +198,8 @@ proc main() =
         i += 2
       of "-h", "--help":
         usageQuit()
-      # TODO(#96): there is no --version flag
+      of "-V", "--version":
+        versionQuit()
       else:
         echo "Unknown flag `$#`" % [arg]
         usageQuit()
