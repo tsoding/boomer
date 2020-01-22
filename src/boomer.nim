@@ -15,6 +15,7 @@ import opengl, opengl/glx
 import la
 import strutils
 import math
+import options
 
 type Shader = tuple[path, content: string]
 
@@ -175,7 +176,8 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
   echo "X ELEVEN ERROR: ", $(addr errorMessage)
 
 proc main() =
-  var configFile = getConfigDir() / "boomer" / "config"
+  let boomerDir = getConfigDir() / "boomer"
+  var configFile = boomerDir / "config"
   var windowed = false
   var delaySec = 0.0
 
@@ -188,7 +190,7 @@ proc main() =
       quit """Usage: boomer [OPTIONS]
   -d, --delay <seconds: float>  delay execution of the program by provided <seconds>
   -h, --help                    show this help and exit
-      --new-config <filepath>   generate a new default config at <filepath>
+      --new-config [filepath]   generate a new default config at [filepath]
   -c, --config <filepath>       use config at <filepath>
   -V, --version                 show the current version and exit
   -w, --windowed                windowed mode instead of fullscreen"""
@@ -196,17 +198,31 @@ proc main() =
     while i <= paramCount():
       let arg = paramStr(i)
 
-      template asParam(paramName: untyped, body: untyped) =
+      template asParam(paramVar: untyped, body: untyped) =
         if i + 1 > paramCount():
           echo "No value is provided for $#" % [arg]
           usageQuit()
-        let paramName = paramStr(i + 1)
+        let paramVar = paramStr(i + 1)
         body
         i += 2
 
       template asFlag(body: untyped) =
         body
         i += 1
+
+      template asOptionalParam(paramVar: untyped, body: untyped) =
+        let paramVar = block:
+          var resultVal = none(string)
+          if i + 1 <= paramCount():
+            let param = paramStr(i + 1)
+            if len(param) > 0 and param[0] != '-':
+              resultVal = some(param)
+          resultVal
+        body
+        if paramVar.isNone:
+          i += 1
+        else:
+          i += 2
 
       case arg
       of "-d", "--delay":
@@ -222,9 +238,14 @@ proc main() =
         asFlag():
           versionQuit()
       of "--new-config":
-        asParam(configName):
-          generateDefaultConfig(configName)
-          quit "Generated config at $#" % [paramStr(i + 1)]
+        asOptionalParam(configName):
+          if configName.isNone:
+            createDir(boomerDir)
+            generateDefaultConfig(configFile)
+            quit "Generated config at $#" % [configFile]
+          else:
+            generateDefaultConfig(configName.get)
+            quit "Generated config at $#" % [configName.get]
       of "-c", "--config":
         asParam(configParam):
           configFile = configParam
