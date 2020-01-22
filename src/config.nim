@@ -1,35 +1,15 @@
 import macros, strutils
 
 type Config* = object
-  scrollSpeed*: float
-  dragFriction*: float
-  scaleFriction*: float
+  scroll_speed*: float
+  drag_friction*: float
+  scale_friction*: float
 
 const defaultConfig* = Config(
-  scrollSpeed: 1.5,
-  dragFriction: 6.0,
-  scaleFriction: 4.0,
+  scroll_speed: 1.5,
+  drag_friction: 6.0,
+  scale_friction: 4.0,
 )
-
-macro parseObject(obj: typed, key, val: string) =
-  result = newNimNode(nnkCaseStmt).add(key)
-  for c in obj.getType[2]:
-    let a = case c.getType.typeKind
-    of ntyFloat:
-      newCall("parseFloat", val)
-    of ntyInt:
-      newCall("parseInt", val)
-    of ntyString:
-      val
-    else:
-      error "Unsupported type: " & c.getType.`$`
-      val
-    result.add newNimNode(nnkOfBranch).add(
-      newLit $c,
-      newStmtList(quote do: `obj`.`c` = `a`)
-    )
-  result.add newNimNode(nnkElse).add(quote do:
-    raise newException(CatchableError, "Unknown config key " & `key`))
 
 proc loadConfig*(filePath: string): Config =
   result = defaultConfig
@@ -40,4 +20,12 @@ proc loadConfig*(filePath: string): Config =
     let pair = line.split('=', 1)
     let key = pair[0].strip
     let value = pair[1].strip
-    result.parseObject key, value
+    case key
+    of "scroll_speed":
+      result.scroll_speed = parseFloat(value)
+    of "drag_friction":
+      result.drag_friction = parseFloat(value)
+    of "scale_friction":
+      result.scale_friction = parseFloat(value)
+    else:
+      quit "Unknown config key `$#`" % [key]
