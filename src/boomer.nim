@@ -175,6 +175,7 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
   echo "X ELEVEN ERROR: ", $(addr errorMessage)
 
 proc main() =
+  var windowed = false
   var delaySec = 0.0
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
@@ -185,7 +186,8 @@ proc main() =
       quit """Usage: boomer [OPTIONS]
   -d, --delay <seconds: float>  delay execution of the program by provided seconds
   -h, --help                    show this help and exit
-  -V, --version                 show the current version and exit"""
+  -V, --version                 show the current version and exit
+  -w, --windowed                windowed mode instead of fullscreen"""
     var i = 1
     while i <= paramCount():
       let arg = paramStr(i)
@@ -196,6 +198,9 @@ proc main() =
           usageQuit()
         delaySec = parseFloat(paramStr(i + 1))
         i += 2
+      of "-w", "--windowed":
+        windowed = true
+        i += 1
       of "-h", "--help":
         usageQuit()
       of "-V", "--version":
@@ -264,7 +269,7 @@ proc main() =
   swa.event_mask = ButtonPressMask or ButtonReleaseMask or
                    KeyPressMask or KeyReleaseMask or
                    PointerMotionMask or ExposureMask or ClientMessage
-  when not defined(windowed):
+  if not windowed:
     swa.override_redirect = 1
     swa.save_under = 1
 
@@ -386,7 +391,7 @@ proc main() =
   let dt = 1.0 / rate.float
   while not quitting:
     # TODO(#78): Is there a better solution to keep the focus always on the window?
-    when not defined(windowed):
+    if not windowed:
       discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
 
     var wa: TXWindowAttributes
