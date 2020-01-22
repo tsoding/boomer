@@ -29,3 +29,10 @@ proc loadConfig*(filePath: string): Config =
       result.scale_friction = parseFloat(value)
     else:
       quit "Unknown config key `$#`" % [key]
+
+proc generateDefaultConfig*(filePath: string) =
+  var f = open(filePath, fmWrite)
+  defer: f.close
+  f.write("scroll_speed = ", defaultConfig.scroll_speed, "\n")
+  f.write("drag_friction = ", defaultConfig.drag_friction, "\n")
+  f.write("scale_friction = ", defaultConfig.scale_friction, "\n")

@@ -175,8 +175,10 @@ proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cde
   echo "X ELEVEN ERROR: ", $(addr errorMessage)
 
 proc main() =
+  var configFile = getConfigDir() / "boomer" / "config"
   var windowed = false
   var delaySec = 0.0
+
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
     proc versionQuit() =
@@ -184,36 +186,54 @@ proc main() =
       quit "boomer-$#" % [hash[0 .. 7]]
     proc usageQuit() =
       quit """Usage: boomer [OPTIONS]
-  -d, --delay <seconds: float>  delay execution of the program by provided seconds
+  -d, --delay <seconds: float>  delay execution of the program by provided <seconds>
   -h, --help                    show this help and exit
+      --new-config <filepath>   generate a new default config at <filepath>
+  -c, --config <filepath>       use config at <filepath>
   -V, --version                 show the current version and exit
   -w, --windowed                windowed mode instead of fullscreen"""
     var i = 1
     while i <= paramCount():
       let arg = paramStr(i)
-      case arg
-      of "-d", "--delay":
+
+      template asParam(paramName: untyped, body: untyped) =
         if i + 1 > paramCount():
           echo "No value is provided for $#" % [arg]
           usageQuit()
-        delaySec = parseFloat(paramStr(i + 1))
+        let paramName = paramStr(i + 1)
+        body
         i += 2
-      of "-w", "--windowed":
-        windowed = true
+
+      template asFlag(body: untyped) =
+        body
         i += 1
+
+      case arg
+      of "-d", "--delay":
+        asParam(delayParam):
+          delaySec = parseFloat(delayParam)
+      of "-w", "--windowed":
+        asFlag():
+          windowed = true
       of "-h", "--help":
-        usageQuit()
+        asFlag():
+          usageQuit()
       of "-V", "--version":
-        versionQuit()
+        asFlag():
+          versionQuit()
+      of "--new-config":
+        asParam(configName):
+          generateDefaultConfig(configName)
+          quit "Generated config at $#" % [paramStr(i + 1)]
+      of "-c", "--config":
+        asParam(configParam):
+          configFile = configParam
       else:
         echo "Unknown flag `$#`" % [arg]
         usageQuit()
   sleep(floor(delaySec * 1000).int)
 
   var config = defaultConfig
-  let
-    boomerDir = getConfigDir() / "boomer"
-    configFile = boomerDir / "config"
 
   if existsFile configFile:
     config = loadConfig(configFile)
