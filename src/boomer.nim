@@ -179,7 +179,9 @@ proc main() =
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
     proc usageQuit() =
-      quit "Usage: boomer [-d|--delay <delay-in-sec: float>] [-h|--help]"
+      quit """Usage: boomer [OPTIONS]
+  -d, --delay <seconds: float>  delay execution of the program by provided seconds
+  -h, --help                    show this help and exit"""
     var i = 1
     while i <= paramCount():
       let arg = paramStr(i)
