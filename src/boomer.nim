@@ -311,17 +311,38 @@ proc main() =
   if vi == nil:
     quit "No appropriate visual found"
 
-
   echo "Visual ", vi.visualid, " selected"
   var swa: TXSetWindowAttributes
   swa.colormap = XCreateColormap(display, DefaultRootWindow(display),
                                  vi.visual, AllocNone)
-  swa.event_mask = ButtonPressMask or ButtonReleaseMask or
-                   KeyPressMask or KeyReleaseMask or
-                   PointerMotionMask or ExposureMask or ClientMessage
   if not windowed:
+    swa.event_mask = ExposureMask or ClientMessage
     swa.override_redirect = 1
     swa.save_under = 1
+  else:
+    swa.event_mask = ExposureMask or ClientMessage or
+                     PointerMotionMask or ButtonPressMask or
+                     ButtonReleaseMask or KeyPressMask or
+                     KeyReleaseMask
+
+  var cursor = XCreateFontCursor(display, XC_arrow)
+  defer: discard XFreeCursor(display, cursor)
+
+  if not windowed:
+    discard XGrabPointer(display, DefaultRootWindow(display), 0,
+                         PointerMotionMask or
+                         ButtonPressMask or
+                         ButtonReleaseMask,
+                         GrabModeAsync, GrabModeAsync,
+                         DefaultRootWindow(display), cursor,
+                         CurrentTime)
+    discard XGrabKeyboard(display, DefaultRootWindow(display), 0,
+                          GrabModeAsync, GrabModeAsync,
+                          CurrentTime)
+  defer:
+    if not windowed:
+      discard XUngrabPointer(display, CurrentTime)
+      discard XUngrabKeyboard(display, CurrentTime)
 
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(
@@ -440,10 +461,6 @@ proc main() =
 
   let dt = 1.0 / rate.float
   while not quitting:
-    # TODO(#78): Is there a better solution to keep the focus always on the window?
-    if not windowed:
-      discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
-
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
     glViewport(0, 0, wa.width, wa.height)
