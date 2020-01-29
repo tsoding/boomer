@@ -12,6 +12,14 @@ Zoomer application for Linux.
 not even alpha yet. Use it at your own risk. Nothing is documented,
 anything can be changed at any moment or stop working at all.**
 
+## Dependencies
+
+### Debian
+
+```console
+$ sudo apt-get install libgl1-mesa-dev libx11-dev libxext-dev libxrandr-dev
+```
+
 ## Quick Start
 
 ```console
