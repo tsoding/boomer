@@ -44,6 +44,27 @@ This will enable:
 | Scroll wheel                   | Zoom in/out.                                                  |
 | <kbd>Ctrl</kbd> + Scroll wheel | Change the radious of the flaslight.                          |
 
+## Configuration
+
+Configuration file is located at `$HOME/.config/boomer/config` and has roughly the following format:
+
+```
+<param-1> = <value-1>
+<param-2> = <value-2>
+# comment
+<param-3> = <value-3>
+```
+
+You can generate a new config at `$HOME/.config/boomer/config` with `$ boomer --new-config`.
+
+Supported parameters:
+
+| Name           | Description                                        |
+|----------------|----------------------------------------------------|
+| scroll_speed   | How quickly you can zoom in/out by scrolling       |
+| drag_friction  | How quickly the movement slows down after dragging |
+| scale_friction | How quickly the zoom slows down after scrolling    |
+
 ## Experimental Features Compilation Flags
 
 Experimental or unstable features can be enabled by passing the following flags to `nimble build` command:
