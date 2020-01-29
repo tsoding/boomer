@@ -169,11 +169,17 @@ proc selectWindow(display: PDisplay): TWindow =
 
   return root
 
-proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cdecl.} =
+# NOTE: This is needed primarily for -d:select along with
+# -d:live. When we are constantly taking a screenshot of a resizing
+# window sometimes you may not know exact shape of the window (because
+# X11 request may lag behind) and you are trying to access invalid
+# memory. X11 does not like that and simply crashes. With this error
+# handler we force it not to crash.
+proc customX11ErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cdecl.} =
   const CAPACITY = 256
   var errorMessage: array[CAPACITY, char]
   discard XGetErrorText(display, errorEvent.error_code.cint, addr errorMessage, CAPACITY)
-  echo "X ELEVEN ERROR: ", $(addr errorMessage)
+  echo "X11: ", $(addr errorMessage)
 
 proc main() =
   let boomerDir = getConfigDir() / "boomer"
@@ -272,7 +278,7 @@ proc main() =
   defer:
     discard XCloseDisplay(display)
 
-  discard XSetErrorHandler(xElevenErrorHandler)
+  discard XSetErrorHandler(customX11ErrorHandler)
 
   when defined(select):
     echo "Please select window:"
