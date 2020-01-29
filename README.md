@@ -15,9 +15,9 @@ anything can be changed at any moment or stop working at all.**
 ## Quick Start
 
 ```console
-$ nix-shell   # only for NixOS
 $ nimble build
-$ ./boomer
+$ ./boomer --help
+$ ./boomer          # to just start using
 ```
 
 ## Developer Capabilities
