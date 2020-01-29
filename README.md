@@ -82,7 +82,7 @@ Experimental or unstable features can be enabled by passing the following flags 
 | Flag          | Description                                                                                                                    |
 |---------------|--------------------------------------------------------------------------------------------------------------------------------|
 | `-d:live`     | Live image update. See issue [#26].                                                                                            |
-| `-d:mitshm`   | Enables fater Live image update using MIT-SHM X11 extension. Should be used along with `-d:live` to have an effect             |
+| `-d:mitshm`   | Enables faster Live image update using MIT-SHM X11 extension. Should be used along with `-d:live` to have an effect             |
 | `-d:select`   | Application lets the user to click on te window to "track" and it will track that specific window instead of the whole screen. |
 
 ## NixOS Overlay
