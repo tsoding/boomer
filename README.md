@@ -3,6 +3,8 @@
 
 # Boomer
 
+![](./demo.gif)
+
 Zoomer application for Linux.
 
 - Development is done on https://twitch.tv/tsoding
