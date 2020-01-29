@@ -31,6 +31,19 @@ $ nimble build -d:developer
 This will enable:
 - Reloading the shaders with `Ctrl+R`
 
+## Controls
+
+| Control                        | Description                                                   |
+|--------------------------------|---------------------------------------------------------------|
+| <kbd>0</kbd>                   | Reset the application state (position, scale, velocity, etc). |
+| <kbd>q</kbd> or <kbd>ESC</kbd> | Quit the application.                                         |
+| <kbd>r</kbd>                   | Reload configuration.                                         |
+| <kbd>Ctrl</kbd> + <kbd>r</kbd> | Reload the shaders (only for Developer mode)                  |
+| <kbd>f</kbd>                   | Toggle flashlight effect.                                     |
+| Drag with left mouse button    | Move the image around.                                        |
+| Scroll wheel                   | Zoom in/out.                                                  |
+| <kbd>Ctrl</kbd> + Scroll wheel | Change the radious of the flaslight.                          |
+
 ## Experimental Features Compilation Flags
 
 Experimental or unstable features can be enabled by passing the following flags to `nimble build` command:
