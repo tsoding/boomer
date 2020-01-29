@@ -184,8 +184,8 @@ proc main() =
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
     proc versionQuit() =
-      const hash = staticExec("git rev-parse HEAD")
-      quit "boomer-$#" % [hash[0 .. 7]]
+      const hash = gorgeEx("git rev-parse HEAD")
+      quit "boomer-$#" % [if hash.exitCode == 0: hash.output[0 .. 7] else: "unknown"]
     proc usageQuit() =
       quit """Usage: boomer [OPTIONS]
   -d, --delay <seconds: float>  delay execution of the program by provided <seconds>
