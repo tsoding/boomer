@@ -169,17 +169,11 @@ proc selectWindow(display: PDisplay): TWindow =
 
   return root
 
-# NOTE: This is needed primarily for -d:select along with
-# -d:live. When we are constantly taking a screenshot of a resizing
-# window sometimes you may not know exact shape of the window (because
-# X11 request may lag behind) and you are trying to access invalid
-# memory. X11 does not like that and simply crashes. With this error
-# handler we force it not to crash.
-proc customX11ErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cdecl.} =
+proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cdecl.} =
   const CAPACITY = 256
   var errorMessage: array[CAPACITY, char]
   discard XGetErrorText(display, errorEvent.error_code.cint, addr errorMessage, CAPACITY)
-  echo "X11: ", $(addr errorMessage)
+  echo "X ELEVEN ERROR: ", $(addr errorMessage)
 
 proc main() =
   let boomerDir = getConfigDir() / "boomer"
@@ -278,7 +272,7 @@ proc main() =
   defer:
     discard XCloseDisplay(display)
 
-  discard XSetErrorHandler(customX11ErrorHandler)
+  discard XSetErrorHandler(xElevenErrorHandler)
 
   when defined(select):
     echo "Please select window:"
@@ -311,38 +305,17 @@ proc main() =
   if vi == nil:
     quit "No appropriate visual found"
 
+
   echo "Visual ", vi.visualid, " selected"
   var swa: TXSetWindowAttributes
   swa.colormap = XCreateColormap(display, DefaultRootWindow(display),
                                  vi.visual, AllocNone)
+  swa.event_mask = ButtonPressMask or ButtonReleaseMask or
+                   KeyPressMask or KeyReleaseMask or
+                   PointerMotionMask or ExposureMask or ClientMessage
   if not windowed:
-    swa.event_mask = ExposureMask or ClientMessage
     swa.override_redirect = 1
     swa.save_under = 1
-  else:
-    swa.event_mask = ExposureMask or ClientMessage or
-                     PointerMotionMask or ButtonPressMask or
-                     ButtonReleaseMask or KeyPressMask or
-                     KeyReleaseMask
-
-  var cursor = XCreateFontCursor(display, XC_arrow)
-  defer: discard XFreeCursor(display, cursor)
-
-  if not windowed:
-    discard XGrabPointer(display, DefaultRootWindow(display), 0,
-                         PointerMotionMask or
-                         ButtonPressMask or
-                         ButtonReleaseMask,
-                         GrabModeAsync, GrabModeAsync,
-                         DefaultRootWindow(display), cursor,
-                         CurrentTime)
-    discard XGrabKeyboard(display, DefaultRootWindow(display), 0,
-                          GrabModeAsync, GrabModeAsync,
-                          CurrentTime)
-  defer:
-    if not windowed:
-      discard XUngrabPointer(display, CurrentTime)
-      discard XUngrabKeyboard(display, CurrentTime)
 
   var attributes: TXWindowAttributes
   discard XGetWindowAttributes(
@@ -461,6 +434,10 @@ proc main() =
 
   let dt = 1.0 / rate.float
   while not quitting:
+    # TODO(#78): Is there a better solution to keep the focus always on the window?
+    if not windowed:
+      discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
+
     var wa: TXWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
     glViewport(0, 0, wa.width, wa.height)
