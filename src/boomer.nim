@@ -285,11 +285,11 @@ proc main() =
   echo "Screen rate: ", rate
 
   let screen = XDefaultScreen(display)
-  var glxMajor, glxMinor: int
+  var glxMajor, glxMinor: cint
 
-  if (not glXQueryVersion(display, glxMajor, glxMinor) or
-      (glxMajor == 1 and glxMinor < 3) or
-      (glxMajor < 1)):
+  if (not glXQueryVersion(display, glxMajor, glxMinor).bool or
+      (glxMajor == 1.cint and glxMinor < 3.cint) or
+      (glxMajor < 1.cint)):
     quit "Invalid GLX version. Expected >=1.3"
   echo("GLX version ", glxMajor, ".", glxMinor)
   echo("GLX extension: ", glXQueryExtensionsString(display, screen))
@@ -339,12 +339,12 @@ proc main() =
 
   var wmDeleteMessage = XInternAtom(
     display, "WM_DELETE_WINDOW",
-    false.TBool)
+    0.cint)
 
   discard XSetWMProtocols(display, win,
                           addr wmDeleteMessage, 1)
 
-  var glc = glXCreateContext(display, vi, nil, GL_TRUE)
+  var glc = glXCreateContext(display, vi, nil, GL_TRUE.cint)
   discard glXMakeCurrent(display, win, glc)
 
   loadExtensions()
