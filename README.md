@@ -34,8 +34,9 @@ For additional Developer Capabilities compile the application with the following
 $ nimble build -d:developer
 ```
 
-This will enable:
-- Reloading the shaders with `Ctrl+R`
+This will enable reloading the shaders with `Ctrl+R`. The shader files (`frag.glsl` and `vert.glsl`) should be located in the same folder as `boomer.nim` for this feature to work. If the shader files not found the program won't even start. 
+
+**Keep in mind that the developer build is not suitable for day-to-day usage because it creates the external dependency on the shader files. Compiling the program without `-d:developer` "bakes" the shaders into the executable and eliminates the dependency.**
 
 ## Controls
 
