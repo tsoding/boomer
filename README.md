@@ -68,6 +68,7 @@ Supported parameters:
 
 | Name           | Description                                        |
 |----------------|----------------------------------------------------|
+| min_scale      | The smallest it can get when zooming out           |
 | scroll_speed   | How quickly you can zoom in/out by scrolling       |
 | drag_friction  | How quickly the movement slows down after dragging |
 | scale_friction | How quickly the zoom slows down after scrolling    |
