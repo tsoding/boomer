@@ -1,16 +1,22 @@
 import macros, strutils
 
+type ScreenshotQuality* = enum
+  Default = "default",
+  High = "high"
+
 type Config* = object
   min_scale*: float
   scroll_speed*: float
   drag_friction*: float
   scale_friction*: float
+  screenshot_quality*: ScreenshotQuality
 
 const defaultConfig* = Config(
   min_scale: 0.01,
   scroll_speed: 1.5,
   drag_friction: 6.0,
   scale_friction: 4.0,
+  screenshot_quality: ScreenshotQuality.Default
 )
 
 proc loadConfig*(filePath: string): Config =
@@ -31,6 +37,8 @@ proc loadConfig*(filePath: string): Config =
       result.drag_friction = parseFloat(value)
     of "scale_friction":
       result.scale_friction = parseFloat(value)
+    of "screenshot_quality":
+      result.screenshot_quality = parseEnum[ScreenshotQuality](value)
     else:
       quit "Unknown config key `$#`" % [key]
 
@@ -41,3 +49,4 @@ proc generateDefaultConfig*(filePath: string) =
   f.write("scroll_speed = ", defaultConfig.scroll_speed, "\n")
   f.write("drag_friction = ", defaultConfig.drag_friction, "\n")
   f.write("scale_friction = ", defaultConfig.scale_friction, "\n")
+  f.write("screenshot_quality = ", defaultConfig.screenshot_quality, "\n")
