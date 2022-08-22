@@ -11,7 +11,13 @@ uniform float cameraScale;
 void main()
 {
     vec4 cursor = vec4(cursorPos.x, windowSize.y - cursorPos.y, 0.0, 1.0);
+
+    float dist = distance(cursor, gl_FragCoord);
+    float delta = fwidth(dist);
+    float alpha = smoothstep(flRadius * cameraScale - delta, flRadius * cameraScale, dist);
+
     color = mix(
         texture(tex, texcoord), vec4(0.0, 0.0, 0.0, 0.0),
-        length(cursor - gl_FragCoord) < (flRadius * cameraScale) ? 0.0 : flShadow);
+        min(alpha, flShadow)
+    );
 }
