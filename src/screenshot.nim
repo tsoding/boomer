@@ -36,13 +36,13 @@ type Screenshot* = object
   when defined(mitshm):
     shminfo*: PXShmSegmentInfo
 
-proc newScreenshot*(display: PDisplay, window: TWindow): Screenshot =
-  var attributes: TXWindowAttributes
+proc newScreenshot*(display: PDisplay, window: Window): Screenshot =
+  var attributes: XWindowAttributes
   discard XGetWindowAttributes(display, window, addr attributes)
 
   when defined(mitshm):
     result.shminfo = cast[PXShmSegmentInfo](
-      allocShared(sizeof(TXShmSegmentInfo)))
+      allocShared(sizeof(XShmSegmentInfo)))
     let screen = DefaultScreen(display)
     result.image = XShmCreateImage(
       display,
@@ -91,8 +91,8 @@ proc destroy*(screenshot: Screenshot, display: PDisplay) =
     discard XDestroyImage(screenshot.image)
 
 # TODO(#92): there is too much X11 error logging when the tracked live update window is resized
-proc refresh*(screenshot: var Screenshot, display: PDisplay, window: TWindow) =
-  var attributes: TXWindowAttributes
+proc refresh*(screenshot: var Screenshot, display: PDisplay, window: Window) =
+  var attributes: XWindowAttributes
   discard XGetWindowAttributes(display, window, addr attributes)
 
   when defined(mitshm):
