@@ -445,6 +445,21 @@ proc main() =
     var xev: TXEvent
     while XPending(display) > 0:
       discard XNextEvent(display, addr xev)
+
+      proc scrollUp() =
+        if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
+          flashlight.deltaRadius += INITIAL_FL_DELTA_RADIUS
+        else:
+          camera.deltaScale += config.scrollSpeed
+          camera.scalePivot = mouse.curr
+
+      proc scrollDown() =
+        if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
+          flashlight.deltaRadius -= INITIAL_FL_DELTA_RADIUS
+        else:
+          camera.deltaScale -= config.scrollSpeed
+          camera.scalePivot = mouse.curr
+
       case xev.theType
       of Expose:
         discard
@@ -470,6 +485,8 @@ proc main() =
       of KeyPress:
         var key = XLookupKeysym(cast[PXKeyEvent](xev.addr), 0)
         case key
+        of XK_EQUAL: scrollUp()
+        of XK_MINUS: scrollDown()
         of XK_0:
           camera.scale = 1.0
           camera.deltaScale = 0.0
@@ -507,21 +524,8 @@ proc main() =
           mouse.prev = mouse.curr
           mouse.drag = true
           camera.velocity = vec2(0.0, 0.0)
-
-        of Button4:             # Scroll up
-          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
-            flashlight.deltaRadius += INITIAL_FL_DELTA_RADIUS
-          else:
-            camera.deltaScale += config.scrollSpeed
-            camera.scalePivot = mouse.curr
-
-        of Button5:             # Scoll down
-          if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
-            flashlight.deltaRadius -= INITIAL_FL_DELTA_RADIUS
-          else:
-            camera.deltaScale -= config.scrollSpeed
-            camera.scalePivot = mouse.curr
-
+        of Button4: scrollUp()
+        of Button5: scrollDown()
         else:
           discard
 

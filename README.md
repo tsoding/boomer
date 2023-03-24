@@ -34,22 +34,22 @@ For additional Developer Capabilities compile the application with the following
 $ nimble build -d:developer
 ```
 
-This will enable reloading the shaders with `Ctrl+R`. The shader files (`frag.glsl` and `vert.glsl`) should be located in the same folder as `boomer.nim` for this feature to work. If the shader files not found the program won't even start. 
+This will enable reloading the shaders with `Ctrl+R`. The shader files (`frag.glsl` and `vert.glsl`) should be located in the same folder as `boomer.nim` for this feature to work. If the shader files not found the program won't even start.
 
 **Keep in mind that the developer build is not suitable for day-to-day usage because it creates the external dependency on the shader files. Compiling the program without `-d:developer` "bakes" the shaders into the executable and eliminates the dependency.**
 
 ## Controls
 
-| Control                        | Description                                                   |
-|--------------------------------|---------------------------------------------------------------|
-| <kbd>0</kbd>                   | Reset the application state (position, scale, velocity, etc). |
-| <kbd>q</kbd> or <kbd>ESC</kbd> | Quit the application.                                         |
-| <kbd>r</kbd>                   | Reload configuration.                                         |
-| <kbd>Ctrl</kbd> + <kbd>r</kbd> | Reload the shaders (only for Developer mode)                  |
-| <kbd>f</kbd>                   | Toggle flashlight effect.                                     |
-| Drag with left mouse button    | Move the image around.                                        |
-| Scroll wheel                   | Zoom in/out.                                                  |
-| <kbd>Ctrl</kbd> + Scroll wheel | Change the radious of the flaslight.                          |
+| Control                                   | Description                                                   |
+|-------------------------------------------|---------------------------------------------------------------|
+| <kbd>0</kbd>                              | Reset the application state (position, scale, velocity, etc). |
+| <kbd>q</kbd> or <kbd>ESC</kbd>            | Quit the application.                                         |
+| <kbd>r</kbd>                              | Reload configuration.                                         |
+| <kbd>Ctrl</kbd> + <kbd>r</kbd>            | Reload the shaders (only for Developer mode)                  |
+| <kbd>f</kbd>                              | Toggle flashlight effect.                                     |
+| Drag with left mouse button               | Move the image around.                                        |
+| Scroll wheel or <kbd>=</kbd>/<kbd>-</kbd> | Zoom in/out.                                                  |
+| <kbd>Ctrl</kbd> + Scroll wheel            | Change the radious of the flaslight.                          |
 
 ## Configuration
 
