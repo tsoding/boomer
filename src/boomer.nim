@@ -9,7 +9,6 @@ import x11/xlib,
        x11/xutil,
        x11/keysym,
        x11/xrandr,
-       x11/xshm,
        x11/cursorfont
 import opengl, opengl/glx
 import la
@@ -125,7 +124,7 @@ proc draw(screenshot: PXImage, camera: Camera, shader, vao, texture: GLuint,
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
 
 proc getCursorPosition(display: PDisplay): Vec2f =
-  var root, child: TWindow
+  var root, child: Window
   var root_x, root_y, win_x, win_y: cint
   var mask: cuint
   discard XQueryPointer(
@@ -137,7 +136,7 @@ proc getCursorPosition(display: PDisplay): Vec2f =
   result.x = root_x.float32
   result.y = root_y.float32
 
-proc selectWindow(display: PDisplay): TWindow =
+proc selectWindow(display: PDisplay): Window =
   var cursor = XCreateFontCursor(display, XC_crosshair)
   defer: discard XFreeCursor(display, cursor)
 
@@ -156,7 +155,7 @@ proc selectWindow(display: PDisplay): TWindow =
                         CurrentTime)
   defer: discard XUngrabKeyboard(display, CurrentTime)
 
-  var event: TXEvent
+  var event: XEvent
   while true:
     discard XNextEvent(display, addr event)
     case event.theType
@@ -242,7 +241,7 @@ proc main() =
           let newConfigPath = configName.get(configFile)
 
           createDir(newConfigPath.splitFile.dir)
-          if newConfigPath.existsFile:
+          if newConfigPath.fileExists:
             stdout.write("File ", newConfigPath, " already exists. Replace it? [yn] ")
             if stdin.readChar != 'y':
               quit "Disaster prevented"
@@ -259,7 +258,7 @@ proc main() =
 
   var config = defaultConfig
 
-  if existsFile configFile:
+  if fileExists configFile:
     config = loadConfig(configFile)
   else:
     stderr.writeLine configFile & " doesn't exist. Using default values. "
@@ -307,7 +306,7 @@ proc main() =
 
 
   echo "Visual ", vi.visualid, " selected"
-  var swa: TXSetWindowAttributes
+  var swa: XSetWindowAttributes
   swa.colormap = XCreateColormap(display, DefaultRootWindow(display),
                                  vi.visual, AllocNone)
   swa.event_mask = ButtonPressMask or ButtonReleaseMask or
@@ -317,7 +316,7 @@ proc main() =
     swa.override_redirect = 1
     swa.save_under = 1
 
-  var attributes: TXWindowAttributes
+  var attributes: XWindowAttributes
   discard XGetWindowAttributes(
     display,
     DefaultRootWindow(display),
@@ -330,9 +329,9 @@ proc main() =
 
   discard XMapWindow(display, win)
 
-  var wmName = "boomer"
-  var wmClass = "Boomer"
-  var hints = TXClassHint(res_name: wmName, res_class: wmClass)
+  var wmName: cstring = "boomer"
+  var wmClass: cstring = "Boomer"
+  var hints = XClassHint(res_name: wmName, res_class: wmClass)
 
   discard XStoreName(display, win, wmName)
   discard XSetClassHint(display, win, addr(hints))
@@ -438,11 +437,11 @@ proc main() =
     if not windowed:
       discard XSetInputFocus(display, win, RevertToParent, CurrentTime);
 
-    var wa: TXWindowAttributes
+    var wa: XWindowAttributes
     discard XGetWindowAttributes(display, win, addr wa)
     glViewport(0, 0, wa.width, wa.height)
 
-    var xev: TXEvent
+    var xev: XEvent
     while XPending(display) > 0:
       discard XNextEvent(display, addr xev)
 
@@ -479,7 +478,7 @@ proc main() =
         mouse.prev = mouse.curr
 
       of ClientMessage:
-        if cast[TAtom](xev.xclient.data.l[0]) == wmDeleteMessage:
+        if cast[Atom](xev.xclient.data.l[0]) == wmDeleteMessage:
           quitting = true
 
       of KeyPress:
@@ -495,7 +494,7 @@ proc main() =
         of XK_q, XK_Escape:
           quitting = true
         of XK_r:
-          if configFile.len > 0 and existsFile(configFile):
+          if configFile.len > 0 and fileExists(configFile):
             config = loadConfig(configFile)
 
           when defined(developer):

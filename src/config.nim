@@ -1,4 +1,4 @@
-import macros, strutils
+import strutils
 
 type Config* = object
   min_scale*: float
