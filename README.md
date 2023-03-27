@@ -66,12 +66,13 @@ You can generate a new config at `$HOME/.config/boomer/config` with `$ boomer --
 
 Supported parameters:
 
-| Name           | Description                                        |
-|----------------|----------------------------------------------------|
-| min_scale      | The smallest it can get when zooming out           |
-| scroll_speed   | How quickly you can zoom in/out by scrolling       |
-| drag_friction  | How quickly the movement slows down after dragging |
-| scale_friction | How quickly the zoom slows down after scrolling    |
+| Name                      | Description                                         |
+|---------------------------|-----------------------------------------------------|
+| min_scale                 | The smallest it can get when zooming out            |
+| scroll_speed              | How quickly you can zoom in/out by scrolling        |
+| drag_friction             | How quickly the movement slows down after dragging  |
+| scale_friction            | How quickly the zoom slows down after scrolling     |
+| flashlight_starts_enabled | If the flashlight is enabled when boomer is started | 
 
 ## Experimental Features Compilation Flags
 
