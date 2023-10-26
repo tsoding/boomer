@@ -9,7 +9,6 @@ import x11/xlib,
        x11/xutil,
        x11/keysym,
        x11/xrandr,
-       x11/xshm,
        x11/cursorfont
 import opengl, opengl/glx
 import la
@@ -172,8 +171,8 @@ proc selectWindow(display: PDisplay): Window =
 proc xElevenErrorHandler(display: PDisplay, errorEvent: PXErrorEvent): cint{.cdecl.} =
   const CAPACITY = 256
   var errorMessage: array[CAPACITY, char]
-  discard XGetErrorText(display, errorEvent.error_code.cint, addr errorMessage, CAPACITY)
-  echo "X ELEVEN ERROR: ", $(addr errorMessage)
+  discard XGetErrorText(display, errorEvent.error_code.cint, cast[cstring](addr errorMessage), CAPACITY)
+  echo "X ELEVEN ERROR: ", $(cast[cstring](addr errorMessage))
 
 proc main() =
   let boomerDir = getConfigDir() / "boomer"
@@ -242,7 +241,7 @@ proc main() =
           let newConfigPath = configName.get(configFile)
 
           createDir(newConfigPath.splitFile.dir)
-          if newConfigPath.existsFile:
+          if newConfigPath.fileExists:
             stdout.write("File ", newConfigPath, " already exists. Replace it? [yn] ")
             if stdin.readChar != 'y':
               quit "Disaster prevented"
@@ -259,7 +258,7 @@ proc main() =
 
   var config = defaultConfig
 
-  if existsFile configFile:
+  if fileExists configFile:
     config = loadConfig(configFile)
   else:
     stderr.writeLine configFile & " doesn't exist. Using default values. "
@@ -495,7 +494,7 @@ proc main() =
         of XK_q, XK_Escape:
           quitting = true
         of XK_r:
-          if configFile.len > 0 and existsFile(configFile):
+          if configFile.len > 0 and fileExists(configFile):
             config = loadConfig(configFile)
 
           when defined(developer):
