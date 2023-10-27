@@ -209,7 +209,7 @@ proc main() =
         body
         i += 1
 
-      template asOptionalParam(paramVar: untyped, body: untyped) =
+      template asOptionalParam(paramVar: untyped, body: untyped) {. warning[UnreachableCode]:off.} =
         let paramVar = block:
           var resultVal = none(string)
           if i + 1 <= paramCount():
