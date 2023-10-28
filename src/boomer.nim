@@ -329,8 +329,8 @@ proc main() =
 
   discard XMapWindow(display, win)
 
-  var wmName = "boomer"
-  var wmClass = "Boomer"
+  const wmName: cstring = "boomer"
+  const wmClass: cstring = "Boomer"
   var hints = XClassHint(res_name: wmName, res_class: wmClass)
 
   discard XStoreName(display, win, wmName)
