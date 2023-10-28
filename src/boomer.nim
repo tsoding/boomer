@@ -14,7 +14,7 @@ import opengl, opengl/glx
 import la
 import strutils
 import math
-import options
+import parseopt
 
 type Shader = tuple[path, content: string]
 
@@ -181,7 +181,7 @@ proc main() =
   var delaySec = 0.0
 
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
-  block:
+  block parseParams:
     proc versionQuit() =
       const hash = gorgeEx("git rev-parse HEAD")
       quit "boomer-$#" % [if hash.exitCode == 0: hash.output[0 .. 7] else: "unknown"]
@@ -192,67 +192,53 @@ proc main() =
       --new-config [filepath]   generate a new default config at [filepath]
   -c, --config <filepath>       use config at <filepath>
   -V, --version                 show the current version and exit
-  -w, --windowed                windowed mode instead of fullscreen"""
-    var i = 1
-    while i <= paramCount():
-      let arg = paramStr(i)
+  -w, --windowed                windowed mode instead of fullscreen
 
-      template asParam(paramVar: untyped, body: untyped) =
-        if i + 1 > paramCount():
-          echo "No value is provided for $#" % [arg]
-          usageQuit()
-        let paramVar = paramStr(i + 1)
-        body
-        i += 2
+  Syntax for short flags: -h / -d:<value> / -d<value>"""
 
-      template asFlag(body: untyped) =
-        body
-        i += 1
+    var optParser = initOptParser(
+        shortNoVal = {'w', 'h', 'v'},
+        longNoVal = @["new-config", "windowed", "help", "version"]
+      )
 
-      template asOptionalParam(paramVar: untyped, body: untyped) =
-        let paramVar = block:
-          var resultVal = none(string)
-          if i + 1 <= paramCount():
-            let param = paramStr(i + 1)
-            if len(param) > 0 and param[0] != '-':
-              resultVal = some(param)
-          resultVal
-        body
-        if paramVar.isNone:
-          i += 1
-        else:
-          i += 2
+    for kind, key, val in getOpt(optParser):
+      case kind:
+      of cmdShortOption, cmdLongOption:
+        case key:
+          of "d", "delay":
+            try:
+              delaySec = parseFloat(val)
+            except ValueError:
+              quit "Delay parameter `$#` is not a valid number." % [val]
+          of "w", "windowed":
+            windowed = true
+          of "h", "help":
+            usageQuit()
+          of "V", "version":
+            versionQuit()
+          of "new-config":
+            let remParams = optParser.remainingArgs()
+            let newConfigPath =
+              if remParams.len > 0 and remParams[0][0] != '-':
+                remParams[0]
+              else:
+                configFile
 
-      case arg
-      of "-d", "--delay":
-        asParam(delayParam):
-          delaySec = parseFloat(delayParam)
-      of "-w", "--windowed":
-        asFlag():
-          windowed = true
-      of "-h", "--help":
-        asFlag():
-          usageQuit()
-      of "-V", "--version":
-        asFlag():
-          versionQuit()
-      of "--new-config":
-        asOptionalParam(configName):
-          let newConfigPath = configName.get(configFile)
+            createDir(newConfigPath.splitFile.dir)
+            if newConfigPath.fileExists:
+              stdout.write("File ", newConfigPath, " already exists. Replace it? [yn] ")
+              if stdin.readChar != 'y':
+                quit "Disaster prevented"
 
-          createDir(newConfigPath.splitFile.dir)
-          if newConfigPath.fileExists:
-            stdout.write("File ", newConfigPath, " already exists. Replace it? [yn] ")
-            if stdin.readChar != 'y':
-              quit "Disaster prevented"
-
-          generateDefaultConfig(newConfigPath)
-          quit "Generated config at $#" % [newConfigPath]
-      of "-c", "--config":
-        asParam(configParam):
-          configFile = configParam
+            generateDefaultConfig(newConfigPath)
+            quit "Generated config at `$#`" % [newConfigPath]
+          of "c", "config":
+            configFile = val
+          else:
+            echo "Unknown flag `$#`" % [key]
+            usageQuit()
       else:
-        echo "Unknown flag `$#`" % [arg]
+        echo "Unknown argument `$#`" % [key]
         usageQuit()
   sleep(floor(delaySec * 1000).int)
 
