@@ -49,7 +49,7 @@ This will enable reloading the shaders with `Ctrl+R`. The shader files (`frag.gl
 | <kbd>f</kbd>                              | Toggle flashlight effect.                                     |
 | Drag with left mouse button               | Move the image around.                                        |
 | Scroll wheel or <kbd>=</kbd>/<kbd>-</kbd> | Zoom in/out.                                                  |
-| <kbd>Ctrl</kbd> + Scroll wheel            | Change the radius of the flaslight.                           |
+| <kbd>Ctrl</kbd> + Scroll wheel            | Change the radius of the flashlight.                          |
 
 ## Configuration
 
