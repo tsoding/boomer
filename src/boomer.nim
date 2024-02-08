@@ -432,6 +432,9 @@ proc main() =
 
 
   let dt = 1.0 / rate.float
+  var originWindow: Window
+  var revertToReturn: cint
+  discard XGetInputFocus(display, addr originWindow, addr revertToReturn)
   while not quitting:
     # TODO(#78): Is there a better solution to keep the focus always on the window?
     if not windowed:
@@ -579,6 +582,7 @@ proc main() =
                    GL_BGRA,
                    GL_UNSIGNED_BYTE,
                    screenshot.image.data)
+  discard XSetInputFocus(display, originWindow, RevertToParent, CurrentTime);
   discard XSync(display, 0)
 
 main()
