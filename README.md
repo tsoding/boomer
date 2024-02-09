@@ -93,6 +93,20 @@ $ ln -s /path/to/boomer/overlay/ boomer
 $ nix-env -iA nixos.boomer
 ```
 
+## NixOS Flake
+
+### Run
+
+```
+$ nix run github:tsoding/boomer
+```
+
+### Installation
+
+```
+$ nix profile install github:tsoding/boomer
+```
+
 ## References
 
 - https://github.com/nim-lang/x11/blob/bf9dc74dd196a98b7c2a2beea4d92640734f7c60/examples/x11ex.nim
