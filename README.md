@@ -49,7 +49,7 @@ This will enable reloading the shaders with `Ctrl+R`. The shader files (`frag.gl
 | <kbd>f</kbd>                              | Toggle flashlight effect.                                     |
 | Drag with left mouse button               | Move the image around.                                        |
 | Scroll wheel or <kbd>=</kbd>/<kbd>-</kbd> | Zoom in/out.                                                  |
-| <kbd>Ctrl</kbd> + Scroll wheel            | Change the radious of the flaslight.                          |
+| <kbd>Ctrl</kbd> + Scroll wheel            | Change the radius of the flashlight.                          |
 
 ## Configuration
 
@@ -77,11 +77,11 @@ Supported parameters:
 
 Experimental or unstable features can be enabled by passing the following flags to `nimble build` command:
 
-| Flag          | Description                                                                                                                    |
-|---------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `-d:live`     | Live image update. See issue [#26].                                                                                            |
+| Flag          | Description                                                                                                                     |
+|---------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `-d:live`     | Live image update. See issue [#26].                                                                                             |
 | `-d:mitshm`   | Enables faster Live image update using MIT-SHM X11 extension. Should be used along with `-d:live` to have an effect             |
-| `-d:select`   | Application lets the user to click on te window to "track" and it will track that specific window instead of the whole screen. |
+| `-d:select`   | Application lets the user to click on the window to "track" and it will track that specific window instead of the whole screen. |
 
 ## NixOS Overlay
 
