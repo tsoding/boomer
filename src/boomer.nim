@@ -489,6 +489,14 @@ proc main() =
         case key
         of XK_EQUAL: scrollUp()
         of XK_MINUS: scrollDown()
+        of XK_h, XK_Left:
+          camera.position.x = camera.position.x - config.camera_speed
+        of XK_j, XK_Down:
+          camera.position.y = camera.position.y + config.camera_speed
+        of XK_k, XK_Up:
+          camera.position.y = camera.position.y - config.camera_speed
+        of XK_l, XK_Right:
+          camera.position.x = camera.position.x + config.camera_speed
         of XK_0:
           camera.scale = 1.0
           camera.deltaScale = 0.0
