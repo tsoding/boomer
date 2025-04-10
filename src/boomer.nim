@@ -327,8 +327,6 @@ proc main() =
     vi.depth, InputOutput, vi.visual,
     CWColormap or CWEventMask or CWOverrideRedirect or CWSaveUnder, addr swa)
 
-  discard XMapWindow(display, win)
-
   var wmName = "boomer"
   var wmClass = "Boomer"
   var hints = XClassHint(res_name: wmName, res_class: wmClass)
@@ -352,6 +350,10 @@ proc main() =
 
   var screenshot = newScreenshot(display, trackingWindow)
   defer: screenshot.destroy(display)
+
+  # Map Window after screenshot so 
+  # that it doesn't interfere with any wm animations
+  discard XMapWindow(display, win)
 
   let w = screenshot.image.width.float32
   let h = screenshot.image.height.float32
