@@ -100,7 +100,7 @@ proc update(flashlight: var Flashlight, dt: float32) =
     flashlight.shadow = max(flashlight.shadow - 6.0 * dt, 0.0)
 
 proc draw(screenshot: PXImage, camera: Camera, shader, vao, texture: GLuint,
-          windowSize: Vec2f, mouse: Mouse, flashlight: Flashlight) =
+          windowSize: Vec2f, mouse: Mouse, flashlight: Flashlight, mirror: bool) =
   glClearColor(0.1, 0.1, 0.1, 1.0)
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
@@ -119,6 +119,7 @@ proc draw(screenshot: PXImage, camera: Camera, shader, vao, texture: GLuint,
               mouse.curr.y.float32)
   glUniform1f(glGetUniformLocation(shader, "flShadow".cstring), flashlight.shadow)
   glUniform1f(glGetUniformLocation(shader, "flRadius".cstring), flashlight.radius)
+  glUniform1i(glGetUniformLocation(shader, "mirror".cstring), if mirror: 1 else: 0)
 
   glBindVertexArray(vao)
   glDrawElements(GL_TRIANGLES, count = 6, GL_UNSIGNED_INT, indices = nil)
@@ -429,7 +430,7 @@ proc main() =
     flashlight = Flashlight(
       isEnabled: false,
       radius: 200.0)
-
+    mirror = false
 
   let dt = 1.0 / rate.float
   var originWindow: Window
@@ -515,6 +516,9 @@ proc main() =
                 echo "Could not reload the shaders"
               echo "------------------------------"
 
+        of XK_m:
+          mirror = not mirror
+
         of XK_f:
           flashlight.isEnabled = not flashlight.isEnabled
         else:
@@ -546,7 +550,7 @@ proc main() =
 
     screenshot.image.draw(camera, shaderProgram, vao, texture,
                           vec2(wa.width.float32, wa.height.float32),
-                          mouse, flashlight)
+                          mouse, flashlight, mirror)
 
     glXSwapBuffers(display, win)
     glFinish()

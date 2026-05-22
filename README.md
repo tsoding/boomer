@@ -45,6 +45,7 @@ This will enable reloading the shaders with `Ctrl+R`. The shader files (`frag.gl
 | <kbd>0</kbd>                              | Reset the application state (position, scale, velocity, etc). |
 | <kbd>q</kbd> or <kbd>ESC</kbd>            | Quit the application.                                         |
 | <kbd>r</kbd>                              | Reload configuration.                                         |
+| <kbd>m</kbd>                              | Mirror the image.                                             |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd>            | Reload the shaders (only for Developer mode)                  |
 | <kbd>f</kbd>                              | Toggle flashlight effect.                                     |
 | Drag with left mouse button               | Move the image around.                                        |
