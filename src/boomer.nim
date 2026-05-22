@@ -358,12 +358,12 @@ proc main() =
   let h = screenshot.image.height.float32
   var
     vao, vbo, ebo: GLuint
-    vertices = [
-      # Position                 Texture coords
-      [GLfloat    w,     0, 0.0, 1.0, 1.0], # Top right
-      [GLfloat    w,     h, 0.0, 1.0, 0.0], # Bottom right
-      [GLfloat    0,     h, 0.0, 0.0, 0.0], # Bottom left
-      [GLfloat    0,     0, 0.0, 0.0, 1.0]  # Top left
+    vertices_foo = [
+      # Position            Texture coords
+      [GLfloat    w,     0, 1.0, 1.0], # Top right
+      [GLfloat    w,     h, 1.0, 0.0], # Bottom right
+      [GLfloat    0,     h, 0.0, 0.0], # Bottom left
+      [GLfloat    0,     0, 0.0, 1.0]  # Top left
     ]
     indices = [GLuint(0), 1, 3,
                       1,  2, 3]
@@ -379,19 +379,19 @@ proc main() =
   glBindVertexArray(vao)
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo)
-  glBufferData(GL_ARRAY_BUFFER, size = GLsizeiptr(sizeof(vertices)),
-               addr vertices, GL_STATIC_DRAW)
+  glBufferData(GL_ARRAY_BUFFER, size = GLsizeiptr(sizeof(vertices_foo)),
+               addr vertices_foo, GL_STATIC_DRAW)
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, size = GLsizeiptr(sizeof(indices)),
                addr indices, GL_STATIC_DRAW);
 
-  var stride = GLsizei(vertices[0].len * sizeof(GLfloat))
+  var stride = GLsizei(vertices_foo[0].len * sizeof(GLfloat))
 
-  glVertexAttribPointer(0, 3, cGL_FLOAT, false, stride, cast[pointer](0))
+  glVertexAttribPointer(0, 2, cGL_FLOAT, false, stride, cast[pointer](0))
   glEnableVertexAttribArray(0)
 
-  glVertexAttribPointer(1, 2, cGL_FLOAT, false, stride, cast[pointer](3 * sizeof(GLfloat)))
+  glVertexAttribPointer(1, 2, cGL_FLOAT, false, stride, cast[pointer](2 * sizeof(GLfloat)))
   glEnableVertexAttribArray(1)
 
   var texture = 0.GLuint
