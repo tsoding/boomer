@@ -15,8 +15,14 @@ import la
 import strutils
 import math
 import options
+import system
 
 type Shader = tuple[path, content: string]
+
+proc check_x11() =
+  if getEnv("XDG_SESSION_TYPE") != "x11":
+    echo "ERROR: Boomer doesn't work on Wayland..."
+    system.quit(1)
 
 proc readShader(file: string): Shader =
   when nimvm:
@@ -180,6 +186,8 @@ proc main() =
   var configFile = boomerDir / "config"
   var windowed = false
   var delaySec = 0.0
+
+  check_x11()
 
   # TODO(#95): Make boomer optionally wait for some kind of event (for example, key press)
   block:
