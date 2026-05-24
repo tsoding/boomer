@@ -495,6 +495,7 @@ proc main() =
           camera.deltaScale = 0.0
           camera.position = vec2(0.0'f32, 0.0)
           camera.velocity = vec2(0.0'f32, 0.0)
+          mirror = false
         of XK_q, XK_Escape:
           quitting = true
         of XK_r:
