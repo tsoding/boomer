@@ -517,6 +517,7 @@ proc main() =
               echo "------------------------------"
 
         of XK_m:
+          camera.position[0] += screenshot.image.width.float/camera.scale - 2*(mouse.curr[0]/camera.scale + camera.position[0])
           mirror = not mirror
 
         of XK_f:
