@@ -21,9 +21,10 @@ proc world*(camera: Camera, v: Vec2f): Vec2f =
   v / camera.scale
 
 proc update*(camera: var Camera, config: Config, dt: float, mouse: Mouse, image: PXImage, windowSize: Vec2f) =
-  if abs(camera.deltaScale) > 0.5:
+  if abs(camera.deltaScale) > 0.01:
     let p0 = (camera.scalePivot - (windowSize * 0.5)) / camera.scale
-    camera.scale = max(camera.scale + camera.delta_scale * dt, config.min_scale)
+    camera.scale *= 1.0 + camera.delta_scale * dt * config.scroll_speed
+    camera.scale = max(camera.scale, config.min_scale)
     let p1 = (camera.scalePivot - (windowSize * 0.5)) / camera.scale
     camera.position += p0 - p1
 

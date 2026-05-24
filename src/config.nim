@@ -8,7 +8,7 @@ type Config* = object
 
 const defaultConfig* = Config(
   min_scale: 0.01,
-  scroll_speed: 1.5,
+  scroll_speed: 1.0,
   drag_friction: 6.0,
   scale_friction: 4.0,
 )
