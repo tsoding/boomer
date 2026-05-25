@@ -12,6 +12,8 @@ Zoomer application for Linux.
 
 ## Dependencies
 
+tested on nim version 1.1.1
+
 ### Debian
 
 ```console
@@ -20,10 +22,15 @@ $ sudo apt-get install libgl1-mesa-dev libx11-dev libxext-dev libxrandr-dev
 
 ## Quick Start
 
+Don't forget to also clone the submodules. This shit should be done by
+default, but some APIs insist to cause friction to developers.
+
 ```console
-$ nimble build
-$ ./boomer --help
-$ ./boomer          # to just start using
+$ git clone --recurse-submodules git@github.com:tsoding/boomer.git
+$ cd boomer
+$ nim c src/boomer.nim
+$ src/boomer --help
+$ src/boomer          # to just start using
 ```
 
 ## Developer Capabilities
@@ -31,10 +38,10 @@ $ ./boomer          # to just start using
 For additional Developer Capabilities compile the application with the following flags:
 
 ```console
-$ nimble build -d:developer
+$ nim c -d:developer src/boomer.nim
 ```
 
-This will enable reloading the shaders with `Ctrl+R`. The shader files (`frag.glsl` and `vert.glsl`) should be located in the same folder as `boomer.nim` for this feature to work. If the shader files not found the program won't even start.
+This will enable reloading the shaders with `Ctrl+R`. For this feature to work, the shader files (`frag.glsl` and `vert.glsl`) should be located in the same folder as `boomer.nim` and you must compile from the project root, not from the src folder. If the shader files are not found the program won't even start.
 
 **Keep in mind that the developer build is not suitable for day-to-day usage because it creates the external dependency on the shader files. Compiling the program without `-d:developer` "bakes" the shaders into the executable and eliminates the dependency.**
 

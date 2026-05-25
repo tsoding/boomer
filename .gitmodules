@@ -1,0 +1,6 @@
+[submodule "submodules/opengl"]
+	path = submodules/opengl
+	url = git@github.com:nim-lang/opengl.git
+[submodule "submodules/x11"]
+	path = submodules/x11
+	url = git@github.com:nim-lang/x11.git
