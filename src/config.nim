@@ -5,12 +5,14 @@ type Config* = object
   scroll_speed*: float
   drag_friction*: float
   scale_friction*: float
+  invert_fl_scroll*: bool
 
 const defaultConfig* = Config(
   min_scale: 0.01,
   scroll_speed: 1.5,
   drag_friction: 6.0,
   scale_friction: 4.0,
+  invert_fl_scroll: false,
 )
 
 proc loadConfig*(filePath: string): Config =
@@ -31,6 +33,8 @@ proc loadConfig*(filePath: string): Config =
       result.drag_friction = parseFloat(value)
     of "scale_friction":
       result.scale_friction = parseFloat(value)
+    of "invert_fl_scroll":
+      result.invert_fl_scroll = parseBool(value)
     else:
       quit "Unknown config key `$#`" % [key]
 
@@ -41,3 +45,4 @@ proc generateDefaultConfig*(filePath: string) =
   f.write("scroll_speed = ", defaultConfig.scroll_speed, "\n")
   f.write("drag_friction = ", defaultConfig.drag_friction, "\n")
   f.write("scale_friction = ", defaultConfig.scale_friction, "\n")
+  f.write("invert_fl_scroll = ", defaultConfig.invert_fl_scroll, "\n")

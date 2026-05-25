@@ -451,14 +451,14 @@ proc main() =
 
       proc scrollUp() =
         if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
-          flashlight.deltaRadius += INITIAL_FL_DELTA_RADIUS
+          flashlight.deltaRadius += INITIAL_FL_DELTA_RADIUS * (if config.invert_fl_scroll: -1.0 else: 1.0)
         else:
           camera.deltaScale += config.scrollSpeed
           camera.scalePivot = mouse.curr
 
       proc scrollDown() =
         if (xev.xkey.state and ControlMask) > 0.uint32 and flashlight.isEnabled:
-          flashlight.deltaRadius -= INITIAL_FL_DELTA_RADIUS
+          flashlight.deltaRadius -= INITIAL_FL_DELTA_RADIUS * (if config.invert_fl_scroll: -1.0 else: 1.0)
         else:
           camera.deltaScale -= config.scrollSpeed
           camera.scalePivot = mouse.curr
